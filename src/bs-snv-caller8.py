@@ -122,7 +122,7 @@ class SNVparams:
             (P_CW+P_GW+P_CC+P_GC)/4, # CG
             (P_CW+P_TW+P_AC+P_GC)/4, # CT
             (P_GW+P_TW+P_AC+P_CC)/4  # GT
-            # ], dtype=float).T)
+            # ], dtype=float).T) # dtype is introduced in Ver 1.24
             ]).T)
         return mx
 
@@ -131,10 +131,10 @@ class SNVparams:
 
     def set_prior(self):
 
-        # STATUS
-        HOMO = ('A', 'T', 'C', 'G')
-        HETER = ('AC', 'AG', 'AT', 'CG', 'CT', 'GT')
-        STATUS = HOMO + HETER
+        # # STATUS
+        # HOMO = ('A', 'T', 'C', 'G')
+        # HETER = ('AC', 'AG', 'AT', 'CG', 'CT', 'GT')
+        # STATUS = HOMO + HETER
 
         # prior
         p = self.mis_rate
@@ -182,6 +182,34 @@ def shrink_depth(depth, threshold = 60):
     return depth
 
 
+class SNVResuts:
+
+    def __init__(self, params: SNVparams):
+        self.first = True
+        self.current_snv = None
+        self.current_vcf = None
+        self.TASKS_IN_QUEUE = 0
+
+        self.out_snv = gzip.open(params.out_snv, 'wt')
+        self.out_vcf = gzip.open(params.out_vcf, 'wt')
+
+    def writeLines(self):
+        self.TASKS_IN_QUEUE -= 1
+        for l in self.current_snv:
+            self.out_snv.write(l)
+        for l in self.current_vcf:
+            self.out_vcf.write(l)
+
+    def close(self):
+        if not self.out_snv.closed:
+            self.out_snv.close()
+        if not self.out_vcf.closed:
+            self.out_vcf.close()
+
+    def format_snv(self):
+        pass
+
+
 # @jit(nopython=True)
 def BS_SNV_Caller(lines: list, args: SNVparams):
 
@@ -195,7 +223,8 @@ def BS_SNV_Caller(lines: list, args: SNVparams):
     ## exclude Ns
     array = array[array[:,1] != 'N',:]
     
-    # diff bases in the Crick strand
+    # base representation of Crick strand in this model
+    # is different from .ATCG file
     reads = array[:,(5,6,7,8, 11,10,13,12)].astype(int) 
 
     # sqrt-transform read counts
@@ -276,18 +305,22 @@ def BS_SNV_Caller(lines: list, args: SNVparams):
     # probability of homozygote
     p_homozyte = np.sum(post_mx[i_sig, :4], axis=1)
 
-    # format output
-    lines_res = []
+    # .snv format output
+    res_snv = []
 
     for i in range(i_sig.sum()):
-        lines_res.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
+        res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
         chrs[i], poss[i], reffs[i],
         p_values[i], p_homozyte[i],
         allele_freq[i,0], allele_freq[i,1], allele_freq[i,2], allele_freq[i,3],
         DP_watson[i], DP_crick[i]
         ))
 
-    return(lines_res)
+    # .vcf format output
+
+
+
+    return(res_snv)
 
 
 
@@ -330,7 +363,7 @@ class LineFile:
         if self.exhausted:
             return None
         
-        # number if readed lines 
+        # number of readed lines 
         i = 0
         lines = []
         while (l := self.input.readline().strip()) and (i < self.batchSize):
@@ -398,7 +431,7 @@ if __name__ == '__main__':
     TASKS_IN_QUEUE = 0
     # FLAG_WAIT = 'upper'
 
-    infile = 'D:/Documents/GitHub/BS-SNV-Caller/data/atcg.large'
+    # infile = 'D:/Documents/GitHub/BS-SNV-Caller/data/atcg.large'
     # IN = io.open(infile, 'r')
 
     # outfile = 'D:/Documents/GitHub/BS-SNV-Caller/data/out'
@@ -443,5 +476,5 @@ if __name__ == '__main__':
         pool.close()
         pool.join()
         ATCGfile.close()
-        OUT.close()
+        OUT_snv.close()
     

@@ -33,4 +33,4 @@ if (argv_len) == 1  or sys.argv[1] in ["-h", "-H", "--help"]:
    print("Single-Nucleotide Variant (SNV) calling with bisulfite-converted sequencing data")
    print_version()
 else :
-   subprocess.
+   subprocess.run()
