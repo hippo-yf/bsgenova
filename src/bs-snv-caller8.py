@@ -4,6 +4,7 @@ import os
 import io
 import math
 import gzip
+import re
 import numpy as np
 from collections import namedtuple
 # from numba import jit
@@ -162,6 +163,14 @@ class SNVparams:
             dtype='float32').reshape(4, 10)
 
     def set_out_files(self):
+
+        # set default sampel name
+        if self.outprefix is None:
+            dir = os.path.dirname(self.infile)
+            filename = os.path.basename(self.infile)
+            fn = re.split(r'\.', filename)[0]
+            self.outprefix = os.path.join(dir, fn)
+
         self.out_snv = self.outprefix + ".snv.gz"
         self.out_vcf = self.outprefix + ".vcf.gz"
 
@@ -489,7 +498,7 @@ if __name__ == '__main__':
 
     parser = OptionParser(usage)
     parser.add_option('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, read fron stdio in unspecified', type="string")
-    parser.add_option('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz', type="string")
+    parser.add_option('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, say for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equilant to setting -o path/sample', type="string")
     parser.add_option('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type="float", default=0.001)
     parser.add_option('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type="float", default=0.03)
     parser.add_option('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type="float", default=0.6)
