@@ -209,6 +209,22 @@ class SNVResuts:
     def format_snv(self):
         pass
 
+def format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
+
+    # .snv format output
+    res_snv = []
+    for i in range(len(chrs)):
+        res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
+        chrs[i], poss[i], reffs[i],
+        p_values[i], p_homozyte[i],
+        allele_freq[i,0], allele_freq[i,1], allele_freq[i,2], allele_freq[i,3],
+        DP_watson[i], DP_crick[i]
+        ))
+    return res_snv
+
+def format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
+    
+    pass
 
 # @jit(nopython=True)
 def BS_SNV_Caller(lines: list, args: SNVparams):
@@ -306,28 +322,30 @@ def BS_SNV_Caller(lines: list, args: SNVparams):
     p_homozyte = np.sum(post_mx[i_sig, :4], axis=1)
 
     # .snv format output
-    res_snv = []
-
-    for i in range(i_sig.sum()):
-        res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
-        chrs[i], poss[i], reffs[i],
-        p_values[i], p_homozyte[i],
-        allele_freq[i,0], allele_freq[i,1], allele_freq[i,2], allele_freq[i,3],
-        DP_watson[i], DP_crick[i]
-        ))
+    res_snv = format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
 
     # .vcf format output
+    res_vcf = format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
+
+    return (res_snv, res_vcf)
 
 
 
-    return(res_snv)
 
+# def calculate(func, args):
+#     return func(*args)
 
-
-
-def calculate(func, args):
-    return func(*args)
-
+# def readBatch(IN, BATACH_SIZE = 1000):
+#     i = 0
+#     line_batch = []
+#     while i < BATACH_SIZE:
+#         line = IN.readline().strip()
+#         if line:
+#             line_batch.append(line)
+#         else:
+#             break
+#         i += 1
+#     return line_batch
 
 def writeLine(lines):
     global TASKS_IN_QUEUE
@@ -335,18 +353,6 @@ def writeLine(lines):
 
     for l in lines:
         OUT_snv.write(l)
-
-def readBatch(IN, BATACH_SIZE = 1000):
-    i = 0
-    line_batch = []
-    while i < BATACH_SIZE:
-        line = IN.readline().strip()
-        if line:
-            line_batch.append(line)
-        else:
-            break
-        i += 1
-    return line_batch
 
 
 class LineFile:
@@ -424,16 +430,14 @@ if __name__ == '__main__':
     parser.add_option('-P', '--num-process', dest='num_process', help='number of processes in parallel', type="int", default=4)
 
     (options, _) = parser.parse_args()
-    #
-   
 
+
+    ############################
     ##
+
     TASKS_IN_QUEUE = 0
-    # FLAG_WAIT = 'upper'
 
     # infile = 'D:/Documents/GitHub/BS-SNV-Caller/data/atcg.large'
-    # IN = io.open(infile, 'r')
-
     # outfile = 'D:/Documents/GitHub/BS-SNV-Caller/data/out'
 
     params = SNVparams(options)
@@ -443,36 +447,25 @@ if __name__ == '__main__':
 
     ATCGfile = LineFile(params.infile, params.batch_size)
 
-    # args = {'p.value': 0.01, 'min.DP': 10, 'shrink.reads': 60}
-
-    # num_workers = 8
-
     wait = WaitTimeSchimitter(params.num_process*20, 
                               params.num_process*50, 
                               0.01, 'lower')
 
-
-    TASKS = []
     with Pool(processes=params.num_process) as pool:
-        
-
         while True: 
             if wait.FLAG_WAIT == 'lower':
                 line_batch = next(ATCGfile)
                 if not line_batch: break
 
                 TASKS_IN_QUEUE += 1
-                # pool.apply_async(calculate, (postp, (line_batch, args)), callback=writeLine)
                 pool.apply_async(BS_SNV_Caller, (line_batch, params), callback=writeLine)
 
+                # pool.apply_async(calculate, (postp, (line_batch, args)), callback=writeLine)
                 # pool.apply_async(f, (int(id), name, float(x), float(y)), callback=writeLine)
                 # results = [pool.apply_async(calculate, task) for task in TASKS]
 
             wait.waitTime(TASKS_IN_QUEUE)
 
-
-
-        
         pool.close()
         pool.join()
         ATCGfile.close()

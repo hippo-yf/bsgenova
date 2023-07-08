@@ -1,0 +1,21 @@
+ 驱动器 D 中的卷是 新加卷
+ 卷的序列号是 02FC-ECA0
+
+ D:\Documents\BioInfo\BS-SNV-Caller 的目录
+
+07/08/2023  01:28 PM    <DIR>          .
+07/08/2023  12:48 AM    <DIR>          ..
+07/08/2023  12:42 AM                66 .gitattributes
+07/08/2023  12:02 AM                84 .gitignore
+07/08/2023  01:42 PM                 0 a
+07/08/2023  12:59 AM    <DIR>          bin
+07/08/2023  01:00 AM               805 BS-SNV-Caller
+07/08/2023  01:04 AM    <DIR>          data
+06/17/2023  04:20 PM            64,482 examples.dask.org__sources_dataframes_01-data-access.ipynb
+07/08/2023  12:42 AM            35,802 LICENSE
+07/08/2023  12:29 AM           660,545 profiling
+07/08/2023  12:57 AM               277 README.md
+07/08/2023  12:42 AM    <DIR>          src
+07/03/2023  01:27 AM            18,806 test.ipynb
+               9 个文件        780,867 字节
+               5 个目录 1,549,469,827,072 可用字节
