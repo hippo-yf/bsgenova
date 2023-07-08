@@ -251,7 +251,7 @@ class SNVResultsBatch:
 
 
 # @jit(nopython=True)
-def BS_SNV_Caller(lines: list, args: SNVparams):
+def BS_SNV_Caller_batch(lines: list, args: SNVparams):
 
     if len(lines) == 0:
         return None
@@ -433,30 +433,9 @@ class WaitTimeSchimitter:
             time.sleep(self.wtime)
             
             print(f'Waiting: {self.FLAG_WAIT}, {k}')
+
+def BS_SNV_Caller(options: OptionParser):
     
-
-if __name__ == '__main__':
-
-    # parse command line
-    
-    usage = 'Usage: BS-SNA-Caller --atcg-file sample.atcg.gz --output-prefix sample [--mutation-rate 1/1000 --error-rate 3/100 --methy-cg 0.6 --methy-ch 0.01]'
-
-    parser = OptionParser(usage)
-    parser.add_option('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, read fron stdio in unspecified', type="string")
-    parser.add_option('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz', type="string")
-    parser.add_option('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type="float", default=0.001)
-    parser.add_option('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type="float", default=0.03)
-    parser.add_option('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type="float", default=0.6)
-    parser.add_option('-n', '--methy-ch', dest='methy_ncg', help='Cytosine methylation rate of non-CpG-context', type="float", default=0.01)
-    parser.add_option('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than min DP will be skipped', type="int", default=10)
-    parser.add_option('-p', '--pvalue', dest='pvalue', help='p-value threshodl', type="float", default=0.01)
-    parser.add_option('-D', '--shrink-depth', dest='shrink_depth', help='sites with coverage larger than this value will be shrinked by a square-root transform', type="int", default=60)
-    parser.add_option('-b', '--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type="int", default=100000)
-    parser.add_option('-P', '--num-process', dest='num_process', help='number of processes in parallel', type="int", default=4)
-
-    (options, _) = parser.parse_args()
-
-
     ############################
     ##
 
@@ -469,15 +448,15 @@ if __name__ == '__main__':
     params = SNVparams(options)
     params.set_model_params()
 
-    # write results
+    # control writing results
+    global wrt_ctl 
     wrt_ctl = ControlWriteFile(params)
-    # OUT_snv = gzip.open(writing.out_snv, 'wt')
 
     ATCGfile = LineFile(params.infile, params.batch_size)
 
     # maintain an in-memory pool
-    wait = WaitTimeSchimitter(params.num_process*20, 
-                              params.num_process*50, 
+    wait = WaitTimeSchimitter(params.num_process*options.pool_lower_num, 
+                              params.num_process*options.pool_upper_num, 
                               0.01, 'lower')
     
     # multi-process parallelization
@@ -488,7 +467,7 @@ if __name__ == '__main__':
                 if not line_batch: break
 
                 wrt_ctl.add_task_num()
-                pool.apply_async(BS_SNV_Caller, (line_batch, params), callback=writeLine)
+                pool.apply_async(BS_SNV_Caller_batch, (line_batch, params), callback=writeLine)
 
                 # pool.apply_async(calculate, (postp, (line_batch, args)), callback=writeLine)
                 # pool.apply_async(f, (int(id), name, float(x), float(y)), callback=writeLine)
@@ -501,3 +480,33 @@ if __name__ == '__main__':
         ATCGfile.close()
         wrt_ctl.close()
     
+
+if __name__ == '__main__':
+
+    # parse command line
+    
+    usage = 'Usage: BS-SNA-Caller.py -i sample.atcg.gz [options]'
+
+    parser = OptionParser(usage)
+    parser.add_option('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, read fron stdio in unspecified', type="string")
+    parser.add_option('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz', type="string")
+    parser.add_option('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type="float", default=0.001)
+    parser.add_option('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type="float", default=0.03)
+    parser.add_option('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type="float", default=0.6)
+    parser.add_option('-n', '--methy-ch', dest='methy_ncg', help='Cytosine methylation rate of non-CpG-context', type="float", default=0.01)
+    parser.add_option('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than min DP will be skipped', type="int", default=10)
+    parser.add_option('-p', '--pvalue', dest='pvalue', help='p-value threshodl', type="float", default=0.01)
+    parser.add_option('--shrink-depth', dest='shrink_depth', help='sites with coverage larger than this value will be shrinked by a square-root transform', type="int", default=60)
+    parser.add_option('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type="int", default=100000)
+    parser.add_option('-P', '--num-process', dest='num_process', help='number of processes in parallel', type="int", default=4)
+    parser.add_option('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type="int", default=20)
+    parser.add_option('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type="int", default=50)
+
+    (options, _) = parser.parse_args()
+
+
+
+    ####################
+
+    BS_SNV_Caller(options)
+
