@@ -5,6 +5,7 @@ import io
 import math
 import gzip
 import numpy as np
+from collections import namedtuple
 # from numba import jit
 from multiprocessing import Pool
 
@@ -181,24 +182,21 @@ def shrink_depth(depth, threshold = 60):
     depth[depth > threshold] = np.round(np.sqrt(depth[depth > threshold]) + k)
     return depth
 
-
-class SNVResuts:
+class ControlWriteFile:
 
     def __init__(self, params: SNVparams):
         self.first = True
-        self.current_snv = None
-        self.current_vcf = None
+        # self.current_snv = None
+        # self.current_vcf = None
         self.TASKS_IN_QUEUE = 0
 
         self.out_snv = gzip.open(params.out_snv, 'wt')
         self.out_vcf = gzip.open(params.out_vcf, 'wt')
 
-    def writeLines(self):
+    def add_task_num(self):
+        self.TASKS_IN_QUEUE += 1
+    def minus_task_num(self):
         self.TASKS_IN_QUEUE -= 1
-        for l in self.current_snv:
-            self.out_snv.write(l)
-        for l in self.current_vcf:
-            self.out_vcf.write(l)
 
     def close(self):
         if not self.out_snv.closed:
@@ -206,25 +204,51 @@ class SNVResuts:
         if not self.out_vcf.closed:
             self.out_vcf.close()
 
-    def format_snv(self):
-        pass
+class SNVResultsBatch:
 
-def format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
+    def __init__(self, chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
+        self.chrs = chrs
+        self.poss = poss
+        self.reffs = reffs
+        self.p_values = p_values
+        self.p_homozyte = p_homozyte
+        self.allele_freq = allele_freq
+        self.DP_watson = DP_watson
+        self.DP_crick = DP_crick
 
-    # .snv format output
-    res_snv = []
-    for i in range(len(chrs)):
-        res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
-        chrs[i], poss[i], reffs[i],
-        p_values[i], p_homozyte[i],
-        allele_freq[i,0], allele_freq[i,1], allele_freq[i,2], allele_freq[i,3],
-        DP_watson[i], DP_crick[i]
-        ))
-    return res_snv
-
-def format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
+        self.len = len(chrs)
+        self.res_snv = None
+        self.res_vcf = None
     
-    pass
+    def format_snv(self):
+        # .snv format output
+        res_snv = []
+        for i in range(self.len):
+            res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
+            self.chrs[i], self.poss[i], self.reffs[i],
+            self.p_values[i], self.p_homozyte[i],
+            self.allele_freq[i,0], self.allele_freq[i,1], self.allele_freq[i,2], self.allele_freq[i,3],
+            self.DP_watson[i], self.DP_crick[i]
+            ))
+        self.res_snv = res_snv
+
+    def format_vcf(self):
+        
+        return None
+    
+    def format_ouptput(self):
+        self.format_snv()
+        self.format_vcf()
+            
+    def write_files(self, wrt_ctl: ControlWriteFile):
+        wrt_ctl.minus_task_num()
+        if self.res_snv is not None:
+            for l in self.res_snv:
+                wrt_ctl.out_snv.write(l)
+        if self.res_vcf is not None:
+            for l in self.res_vcf:
+                wrt_ctl.out_vcf.write(l)
+
 
 # @jit(nopython=True)
 def BS_SNV_Caller(lines: list, args: SNVparams):
@@ -321,13 +345,17 @@ def BS_SNV_Caller(lines: list, args: SNVparams):
     # probability of homozygote
     p_homozyte = np.sum(post_mx[i_sig, :4], axis=1)
 
-    # .snv format output
-    res_snv = format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
 
-    # .vcf format output
-    res_vcf = format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
+    # # .snv format output
+    # res_snv = format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
 
-    return (res_snv, res_vcf)
+    # # .vcf format output
+    # res_vcf = format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
+
+    res = SNVResultsBatch(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
+    res.format_ouptput()
+
+    return res
 
 
 
@@ -347,12 +375,9 @@ def BS_SNV_Caller(lines: list, args: SNVparams):
 #         i += 1
 #     return line_batch
 
-def writeLine(lines):
-    global TASKS_IN_QUEUE
-    TASKS_IN_QUEUE -= 1
-
-    for l in lines:
-        OUT_snv.write(l)
+def writeLine(res: SNVResultsBatch):
+    global wrt_ctl
+    res.write_files(wrt_ctl)
 
 
 class LineFile:
@@ -435,39 +460,44 @@ if __name__ == '__main__':
     ############################
     ##
 
-    TASKS_IN_QUEUE = 0
+    # TASKS_IN_QUEUE = 0
 
     # infile = 'D:/Documents/GitHub/BS-SNV-Caller/data/atcg.large'
     # outfile = 'D:/Documents/GitHub/BS-SNV-Caller/data/out'
 
+    # model params
     params = SNVparams(options)
     params.set_model_params()
 
-    OUT_snv = gzip.open(params.out_snv, 'wt')
+    # write results
+    wrt_ctl = ControlWriteFile(params)
+    # OUT_snv = gzip.open(writing.out_snv, 'wt')
 
     ATCGfile = LineFile(params.infile, params.batch_size)
 
+    # maintain an in-memory pool
     wait = WaitTimeSchimitter(params.num_process*20, 
                               params.num_process*50, 
                               0.01, 'lower')
-
+    
+    # multi-process parallelization
     with Pool(processes=params.num_process) as pool:
         while True: 
             if wait.FLAG_WAIT == 'lower':
                 line_batch = next(ATCGfile)
                 if not line_batch: break
 
-                TASKS_IN_QUEUE += 1
+                wrt_ctl.add_task_num()
                 pool.apply_async(BS_SNV_Caller, (line_batch, params), callback=writeLine)
 
                 # pool.apply_async(calculate, (postp, (line_batch, args)), callback=writeLine)
                 # pool.apply_async(f, (int(id), name, float(x), float(y)), callback=writeLine)
                 # results = [pool.apply_async(calculate, task) for task in TASKS]
 
-            wait.waitTime(TASKS_IN_QUEUE)
+            wait.waitTime(wrt_ctl.TASKS_IN_QUEUE)
 
         pool.close()
         pool.join()
         ATCGfile.close()
-        OUT_snv.close()
+        wrt_ctl.close()
     
