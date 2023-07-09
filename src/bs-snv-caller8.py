@@ -14,7 +14,7 @@ from multiprocessing import Pool
 # dmultinom = multinomial.pmf
 
 from optparse import OptionParser
- 
+from optparse import Values
 
 
 # # mutation rate
@@ -40,7 +40,7 @@ from optparse import OptionParser
 
 
 class SNVparams:
-    def __init__(self, args):
+    def __init__(self, args: Values):
         self.infile = args.infile
         self.outprefix = args.outprefix
         self.mutation_rate = args.mutation_rate/3
@@ -52,7 +52,6 @@ class SNVparams:
         self.min_depth = args.min_depth
 
         
-
         self.pvalue = args.pvalue
         self.shrink_depth = args.shrink_depth
 
@@ -62,8 +61,11 @@ class SNVparams:
         self.pool_lower_num = args.pool_lower_num
         self.pool_upper_num = args.pool_upper_num
 
-        #
 
+    # def reset_param(self):
+    #     self.mutation_rate = self.mutation_rate/3
+    #     self.error_rate = self.error_rate/3
+    #     self.mis_rate = self.error_rate + self.mutation_rate
 
     # transition prob of haploidy, likelihood
 
@@ -168,7 +170,7 @@ class SNVparams:
     def set_out_files(self):
 
         # set default sampel name
-        if self.outprefix is None:
+        if self.outprefix is None or self.outprefix == "":
             dir = os.path.dirname(self.infile)
             filename = os.path.basename(self.infile)
             fn = re.split(r'\.', filename)[0]
@@ -206,8 +208,8 @@ class ControlWriteFile:
         self.out_vcf = gzip.open(params.out_vcf, 'wt')
 
         # Schimitter waiting
-        self.thres_u = params.pool_upper_num
-        self.thres_l = params.pool_lower_num
+        self.thres_u = params.pool_upper_num*params.num_process
+        self.thres_l = params.pool_lower_num*params.num_process
         self.wtime = 0.01
         self.FLAG_WAIT = 'lower'
 
@@ -305,27 +307,27 @@ def format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, 
 #     global wrt_ctl
 #     res.write_files(wrt_ctl)
 
-# def write_lines(res: SNVResultsBatch):
-#     global wrt_ctl
-
-#     wrt_ctl.minus_task_num()
-#     if res.snv is not None:
-#         for l in res.snv:
-#             wrt_ctl.out_snv.write(l)
-#     if res.vcf is not None:
-#         for l in res.vcf:
-#             wrt_ctl.out_vcf.write(l)
-
-def write_lines(res: list):
+def write_lines(res: SNVResultsBatch):
     global wrt_ctl
 
     wrt_ctl.minus_task_num()
-    if res[0] is not None:
-        for l in res[0]:
+    if res.snv is not None:
+        for l in res.snv:
             wrt_ctl.out_snv.write(l)
-    if res[1] is not None:
-        for l in res[1]:
+    if res.vcf is not None:
+        for l in res.vcf:
             wrt_ctl.out_vcf.write(l)
+
+# def write_lines(res: list):
+#     global wrt_ctl
+
+#     wrt_ctl.minus_task_num()
+#     if res[0] is not None:
+#         for l in res[0]:
+#             wrt_ctl.out_snv.write(l)
+#     if res[1] is not None:
+#         for l in res[1]:
+#             wrt_ctl.out_vcf.write(l)
 
 
 # @jit(nopython=True)
@@ -424,17 +426,28 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
     p_homozyte = np.sum(post_mx[i_sig, :4], axis=1)
 
 
-    # .snv format output
-    res_snv = format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
+    # # .snv format output
+    # res_snv = format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
 
-    # .vcf format output
-    res_vcf = format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
+    # # .vcf format output
+    # res_vcf = format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
 
     # res = SNVResultsBatch(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
     # res.format_ouptput()
 
-    # return SNVResultsBatch(snv=res_snv, vcf=res_vcf)
-    return (res_snv, res_vcf)
+    res_snv = []
+    for i in range(len(chrs)):
+        res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
+        chrs[i], poss[i], reffs[i],
+        p_values[i], p_homozyte[i],
+        allele_freq[i,0], allele_freq[i,1], allele_freq[i,2], allele_freq[i,3],
+        DP_watson[i], DP_crick[i]
+        ))
+
+    res_vcf = None
+
+    return SNVResultsBatch(snv=res_snv, vcf=res_vcf)
+    # return (res_snv, res_vcf)
 
 
 class LineFile:
@@ -491,7 +504,31 @@ class LineFile:
             
 #             print(f'Waiting: {self.FLAG_WAIT}, {k}')
 
-def BS_SNV_Caller(options: OptionParser):
+
+if __name__ == '__main__':
+
+    # parse command line
+    
+    usage = 'Usage: BS-SNA-Caller.py -i sample.atcg.gz [options]'
+
+    parser = OptionParser(usage)
+    parser.add_option('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, read fron stdio in unspecified', type="string")
+    parser.add_option('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, say for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equilant to setting -o path/sample', type="string")
+    parser.add_option('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type="float", default=0.001)
+    parser.add_option('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type="float", default=0.03)
+    parser.add_option('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type="float", default=0.6)
+    parser.add_option('-n', '--methy-ch', dest='methy_ncg', help='Cytosine methylation rate of non-CpG-context', type="float", default=0.01)
+    parser.add_option('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than min DP will be skipped', type="int", default=10)
+    parser.add_option('-p', '--pvalue', dest='pvalue', help='p-value threshodl', type="float", default=0.01)
+    parser.add_option('--shrink-depth', dest='shrink_depth', help='sites with coverage larger than this value will be shrinked by a square-root transform', type="int", default=60)
+    parser.add_option('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type="int", default=100000)
+    parser.add_option('-P', '--num-process', dest='num_process', help='number of processes in parallel', type="int", default=4)
+    parser.add_option('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type="int", default=10)
+    parser.add_option('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type="int", default=30)
+
+    (options, _) = parser.parse_args()
+
+
     
     ############################
     ##
@@ -537,33 +574,3 @@ def BS_SNV_Caller(options: OptionParser):
         ATCGfile.close()
         wrt_ctl.close()
     
-
-if __name__ == '__main__':
-
-    # parse command line
-    
-    usage = 'Usage: BS-SNA-Caller.py -i sample.atcg.gz [options]'
-
-    parser = OptionParser(usage)
-    parser.add_option('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, read fron stdio in unspecified', type="string")
-    parser.add_option('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, say for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equilant to setting -o path/sample', type="string")
-    parser.add_option('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type="float", default=0.001)
-    parser.add_option('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type="float", default=0.03)
-    parser.add_option('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type="float", default=0.6)
-    parser.add_option('-n', '--methy-ch', dest='methy_ncg', help='Cytosine methylation rate of non-CpG-context', type="float", default=0.01)
-    parser.add_option('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than min DP will be skipped', type="int", default=10)
-    parser.add_option('-p', '--pvalue', dest='pvalue', help='p-value threshodl', type="float", default=0.01)
-    parser.add_option('--shrink-depth', dest='shrink_depth', help='sites with coverage larger than this value will be shrinked by a square-root transform', type="int", default=60)
-    parser.add_option('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type="int", default=100000)
-    parser.add_option('-P', '--num-process', dest='num_process', help='number of processes in parallel', type="int", default=4)
-    parser.add_option('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type="int", default=20)
-    parser.add_option('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type="int", default=50)
-
-    (options, _) = parser.parse_args()
-
-
-
-    ####################
-
-    BS_SNV_Caller(options)
-
