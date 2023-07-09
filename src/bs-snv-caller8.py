@@ -59,6 +59,9 @@ class SNVparams:
         self.batch_size = args.batch_size
         self.num_process = args.num_process
 
+        self.pool_lower_num = args.pool_lower_num
+        self.pool_upper_num = args.pool_upper_num
+
         #
 
 
@@ -202,10 +205,31 @@ class ControlWriteFile:
         self.out_snv = gzip.open(params.out_snv, 'wt')
         self.out_vcf = gzip.open(params.out_vcf, 'wt')
 
+        # Schimitter waiting
+        self.thres_u = params.pool_upper_num
+        self.thres_l = params.pool_lower_num
+        self.wtime = 0.01
+        self.FLAG_WAIT = 'lower'
+
+    def setWaitTimeFlag(self):
+        if self.FLAG_WAIT == 'upper':
+            if self.TASKS_IN_QUEUE < self.thres_l:
+                self.FLAG_WAIT = 'lower'
+        elif self.FLAG_WAIT == 'lower':
+            if self.TASKS_IN_QUEUE > self.thres_u:
+                self.FLAG_WAIT = 'upper'
+
     def add_task_num(self):
         self.TASKS_IN_QUEUE += 1
+        self.setWaitTimeFlag()
+
     def minus_task_num(self):
         self.TASKS_IN_QUEUE -= 1
+        self.setWaitTimeFlag()
+
+    def waitTime(self):
+        if self.FLAG_WAIT == 'upper':
+            time.sleep(self.wtime)
 
     def close(self):
         if not self.out_snv.closed:
@@ -213,54 +237,99 @@ class ControlWriteFile:
         if not self.out_vcf.closed:
             self.out_vcf.close()
 
-class SNVResultsBatch:
+SNVResultsBatch = namedtuple('SNVResultsBatch', ['snv', 'vcf'])
 
-    def __init__(self, chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
-        self.chrs = chrs
-        self.poss = poss
-        self.reffs = reffs
-        self.p_values = p_values
-        self.p_homozyte = p_homozyte
-        self.allele_freq = allele_freq
-        self.DP_watson = DP_watson
-        self.DP_crick = DP_crick
+# class SNVResultsBatch:
 
-        self.len = len(chrs)
-        self.res_snv = None
-        self.res_vcf = None
+#     def __init__(self, chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
+#         self.chrs = chrs
+#         self.poss = poss
+#         self.reffs = reffs
+#         self.p_values = p_values
+#         self.p_homozyte = p_homozyte
+#         self.allele_freq = allele_freq
+#         self.DP_watson = DP_watson
+#         self.DP_crick = DP_crick
+
+#         self.len = len(chrs)
+#         self.res_snv = None
+#         self.res_vcf = None
     
-    def format_snv(self):
-        # .snv format output
-        res_snv = []
-        for i in range(self.len):
-            res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
-            self.chrs[i], self.poss[i], self.reffs[i],
-            self.p_values[i], self.p_homozyte[i],
-            self.allele_freq[i,0], self.allele_freq[i,1], self.allele_freq[i,2], self.allele_freq[i,3],
-            self.DP_watson[i], self.DP_crick[i]
-            ))
-        self.res_snv = res_snv
+#     def format_snv(self):
+#         # .snv format output
+#         res_snv = []
+#         for i in range(self.len):
+#             res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
+#             self.chrs[i], self.poss[i], self.reffs[i],
+#             self.p_values[i], self.p_homozyte[i],
+#             self.allele_freq[i,0], self.allele_freq[i,1], self.allele_freq[i,2], self.allele_freq[i,3],
+#             self.DP_watson[i], self.DP_crick[i]
+#             ))
+#         self.res_snv = res_snv
 
-    def format_vcf(self):
+#     def format_vcf(self):
         
-        return None
+#         return None
     
-    def format_ouptput(self):
-        self.format_snv()
-        self.format_vcf()
+#     def format_ouptput(self):
+#         self.format_snv()
+#         self.format_vcf()
             
-    def write_files(self, wrt_ctl: ControlWriteFile):
-        wrt_ctl.minus_task_num()
-        if self.res_snv is not None:
-            for l in self.res_snv:
-                wrt_ctl.out_snv.write(l)
-        if self.res_vcf is not None:
-            for l in self.res_vcf:
-                wrt_ctl.out_vcf.write(l)
+#     def write_files(self, wrt_ctl: ControlWriteFile):
+#         wrt_ctl.minus_task_num()
+#         if self.res_snv is not None:
+#             for l in self.res_snv:
+#                 wrt_ctl.out_snv.write(l)
+#         if self.res_vcf is not None:
+#             for l in self.res_vcf:
+#                 wrt_ctl.out_vcf.write(l)
+
+# .snv format output
+def format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
+
+    res_snv = []
+    for i in range(len(chrs)):
+        res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
+        chrs[i], poss[i], reffs[i],
+        p_values[i], p_homozyte[i],
+        allele_freq[i,0], allele_freq[i,1], allele_freq[i,2], allele_freq[i,3],
+        DP_watson[i], DP_crick[i]
+        ))
+    return res_snv
+
+def format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
+    return None
+
+
+# def writeLine(res: SNVResultsBatch):
+#     global wrt_ctl
+#     res.write_files(wrt_ctl)
+
+# def write_lines(res: SNVResultsBatch):
+#     global wrt_ctl
+
+#     wrt_ctl.minus_task_num()
+#     if res.snv is not None:
+#         for l in res.snv:
+#             wrt_ctl.out_snv.write(l)
+#     if res.vcf is not None:
+#         for l in res.vcf:
+#             wrt_ctl.out_vcf.write(l)
+
+def write_lines(res: list):
+    global wrt_ctl
+
+    wrt_ctl.minus_task_num()
+    if res[0] is not None:
+        for l in res[0]:
+            wrt_ctl.out_snv.write(l)
+    if res[1] is not None:
+        for l in res[1]:
+            wrt_ctl.out_vcf.write(l)
 
 
 # @jit(nopython=True)
-def BS_SNV_Caller_batch(lines: list, args: SNVparams):
+def BS_SNV_Caller_batch(lines: list, params: SNVparams):
 
     if len(lines) == 0:
         return None
@@ -278,13 +347,13 @@ def BS_SNV_Caller_batch(lines: list, args: SNVparams):
 
     # sqrt-transform read counts
     
-    i = reads > args.shrink_depth
+    i = reads > params.shrink_depth
     if i.sum() > 0:
-        reads[i] = shrink_depth(reads[i], args.shrink_depth)
+        reads[i] = shrink_depth(reads[i], params.shrink_depth)
 
     # exclude sites of low coverage
 
-    i = np.sum(reads, axis=1) < args.min_depth
+    i = np.sum(reads, axis=1) < params.min_depth
     if i.sum() > 0:
         reads = reads[np.logical_not(i), :]
         array = array[np.logical_not(i), :]
@@ -303,8 +372,8 @@ def BS_SNV_Caller_batch(lines: list, args: SNVparams):
 
     post_mx = np.zeros((N_rows, 10))
 
-    post_mx[is_CG, :] = reads[is_CG, :] @ args.loglik['CG']
-    post_mx[np.logical_not(is_CG), :] = reads[np.logical_not(is_CG), :] @ args.loglik['CH']
+    post_mx[is_CG, :] = reads[is_CG, :] @ params.loglik['CG']
+    post_mx[np.logical_not(is_CG), :] = reads[np.logical_not(is_CG), :] @ params.loglik['CH']
 
     post_mx = np.exp(post_mx - np.max(post_mx, axis=1, keepdims=True))
 
@@ -313,7 +382,7 @@ def BS_SNV_Caller_batch(lines: list, args: SNVparams):
     prior_mx = np.zeros((N_rows, 10))
 
     for ref in BASES:
-        prior_mx[refs == ref, :] = args.priors[ref]
+        prior_mx[refs == ref, :] = params.priors[ref]
 
     # post prob and normalization
 
@@ -331,7 +400,7 @@ def BS_SNV_Caller_batch(lines: list, args: SNVparams):
 
     # significant sites
 
-    i_sig = p_value < args.pvalue
+    i_sig = p_value < params.pvalue
 
     if i_sig.sum() == 0:
         return(None)
@@ -345,7 +414,7 @@ def BS_SNV_Caller_batch(lines: list, args: SNVparams):
 
 
     # allele frequencies
-    allele_freq = post_mx[i_sig,:] @ args.allele_weights.T
+    allele_freq = post_mx[i_sig,:] @ params.allele_weights.T
 
     # strand coverage
     DP_watson = np.sum(reads[i_sig, :4], axis=1)
@@ -355,38 +424,17 @@ def BS_SNV_Caller_batch(lines: list, args: SNVparams):
     p_homozyte = np.sum(post_mx[i_sig, :4], axis=1)
 
 
-    # # .snv format output
-    # res_snv = format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
+    # .snv format output
+    res_snv = format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
 
-    # # .vcf format output
-    # res_vcf = format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
+    # .vcf format output
+    res_vcf = format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
 
-    res = SNVResultsBatch(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
-    res.format_ouptput()
+    # res = SNVResultsBatch(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
+    # res.format_ouptput()
 
-    return res
-
-
-
-
-# def calculate(func, args):
-#     return func(*args)
-
-# def readBatch(IN, BATACH_SIZE = 1000):
-#     i = 0
-#     line_batch = []
-#     while i < BATACH_SIZE:
-#         line = IN.readline().strip()
-#         if line:
-#             line_batch.append(line)
-#         else:
-#             break
-#         i += 1
-#     return line_batch
-
-def writeLine(res: SNVResultsBatch):
-    global wrt_ctl
-    res.write_files(wrt_ctl)
+    # return SNVResultsBatch(snv=res_snv, vcf=res_vcf)
+    return (res_snv, res_vcf)
 
 
 class LineFile:
@@ -421,27 +469,27 @@ class LineFile:
         if not self.input.closed:
             self.input.close()
 
-class WaitTimeSchimitter:
-    def __init__(self, thres_u:int, thres_l:int, wtime: float, FLAG_WAIT: str):
-        self.thres_u = thres_u
-        self.thres_l = thres_l
-        self.wtime = wtime
-        self.FLAG_WAIT = FLAG_WAIT
+# class WaitTimeSchimitter:
+#     def __init__(self, thres_u:int, thres_l:int, wtime: float, FLAG_WAIT: str):
+#         self.thres_u = thres_u
+#         self.thres_l = thres_l
+#         self.wtime = wtime
+#         self.FLAG_WAIT = FLAG_WAIT
 
-    def setWaitTimeFlag(self, k:int):
-        if self.FLAG_WAIT == 'upper':
-            if k < self.thres_l:
-                self.FLAG_WAIT = 'lower'
-        elif self.FLAG_WAIT == 'lower':
-            if k > self.thres_u:
-                self.FLAG_WAIT = 'upper'
+#     def setWaitTimeFlag(self, k:int):
+#         if self.FLAG_WAIT == 'upper':
+#             if k < self.thres_l:
+#                 self.FLAG_WAIT = 'lower'
+#         elif self.FLAG_WAIT == 'lower':
+#             if k > self.thres_u:
+#                 self.FLAG_WAIT = 'upper'
 
-    def waitTime(self, k: int):
-        self.setWaitTimeFlag(k)
-        if self.FLAG_WAIT == 'upper':
-            time.sleep(self.wtime)
+#     def waitTime(self, k: int):
+#         self.setWaitTimeFlag(k)
+#         if self.FLAG_WAIT == 'upper':
+#             time.sleep(self.wtime)
             
-            print(f'Waiting: {self.FLAG_WAIT}, {k}')
+#             print(f'Waiting: {self.FLAG_WAIT}, {k}')
 
 def BS_SNV_Caller(options: OptionParser):
     
@@ -464,25 +512,25 @@ def BS_SNV_Caller(options: OptionParser):
     ATCGfile = LineFile(params.infile, params.batch_size)
 
     # maintain an in-memory pool
-    wait = WaitTimeSchimitter(params.num_process*options.pool_lower_num, 
-                              params.num_process*options.pool_upper_num, 
-                              0.01, 'lower')
+    # wait = WaitTimeSchimitter(params.num_process*options.pool_lower_num, 
+    #                           params.num_process*options.pool_upper_num, 
+    #                           0.01, 'lower')
     
     # multi-process parallelization
     with Pool(processes=params.num_process) as pool:
         while True: 
-            if wait.FLAG_WAIT == 'lower':
+            if wrt_ctl.FLAG_WAIT == 'lower':
                 line_batch = next(ATCGfile)
                 if not line_batch: break
 
                 wrt_ctl.add_task_num()
-                pool.apply_async(BS_SNV_Caller_batch, (line_batch, params), callback=writeLine)
+                pool.apply_async(BS_SNV_Caller_batch, (line_batch, params), callback=write_lines)
 
                 # pool.apply_async(calculate, (postp, (line_batch, args)), callback=writeLine)
                 # pool.apply_async(f, (int(id), name, float(x), float(y)), callback=writeLine)
                 # results = [pool.apply_async(calculate, task) for task in TASKS]
 
-            wait.waitTime(wrt_ctl.TASKS_IN_QUEUE)
+            wrt_ctl.waitTime()
 
         pool.close()
         pool.join()
