@@ -1,8 +1,6 @@
 import time
-import random
 import os
 import io
-import math
 import gzip
 import re
 import numpy as np
@@ -14,29 +12,7 @@ from multiprocessing import Pool
 # dmultinom = multinomial.pmf
 
 from optparse import OptionParser
-from optparse import Values
-
-
-# # mutation rate
-# pm = 1/1000/3
-
-# # error rate
-# # in oocyte samples, error rate is set triple
-# # pe = 1/100/3
-# pe = 3/100/3
-
-# # total mis rate
-# p = pm + pe
-
-# # methylation rate/proportion 
-# pr_cg = 0.6        # CG content
-# pr_ncg = 1/100     # non-CG content
-
-
-# PAs = {'CG': np.array(transA(pr_cg)), 'CH': np.array(transA(pr_ncg))}
-# PTs = {'CG': np.array(transT(pr_cg)), 'CH': np.array(transT(pr_ncg))}
-# PCs = {'CG': np.array(transC(pr_cg)), 'CH': np.array(transC(pr_ncg))}
-# PGs = {'CG': np.array(transG(pr_cg)), 'CH': np.array(transG(pr_ncg))}
+# from optparse import Values
 
 
 class SNVparams:
@@ -174,7 +150,11 @@ class SNVparams:
             dir = os.path.dirname(self.infile)
             filename = os.path.basename(self.infile)
             fn = re.split(r'\.', filename)[0]
+            self.sampleID = fn # sample name
             self.outprefix = os.path.join(dir, fn)
+        else:
+            fn = re.split(r'/', self.outprefix)[-1]
+            self.sampleID = fn # sample name
 
         self.out_snv = self.outprefix + ".snv.gz"
         self.out_vcf = self.outprefix + ".vcf.gz"
@@ -299,35 +279,21 @@ def format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, 
         ))
     return res_snv
 
+
 def format_vcf(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
     return None
 
-
-# def writeLine(res: SNVResultsBatch):
-#     global wrt_ctl
-#     res.write_files(wrt_ctl)
 
 def write_lines(res: SNVResultsBatch):
     global wrt_ctl
 
     wrt_ctl.minus_task_num()
+    if res is None: return
+
     if res.snv is not None:
-        for l in res.snv:
-            wrt_ctl.out_snv.write(l)
+        wrt_ctl.out_snv.writelines(res.snv)
     if res.vcf is not None:
-        for l in res.vcf:
-            wrt_ctl.out_vcf.write(l)
-
-# def write_lines(res: list):
-#     global wrt_ctl
-
-#     wrt_ctl.minus_task_num()
-#     if res[0] is not None:
-#         for l in res[0]:
-#             wrt_ctl.out_snv.write(l)
-#     if res[1] is not None:
-#         for l in res[1]:
-#             wrt_ctl.out_vcf.write(l)
+        wrt_ctl.out_vcf.writelines(res.vcf)
 
 
 # @jit(nopython=True)
@@ -341,7 +307,9 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
     array = np.array(line_res)
 
     ## exclude Ns
-    array = array[array[:,1] != 'N',:]
+    i = array[:,1] != 'N'
+    if sum(i) < len(lines):
+        array = array[i,:]
     
     # base representation of Crick strand in this model
     # is different from .ATCG file
@@ -355,14 +323,16 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
 
     # exclude sites of low coverage
 
-    i = np.sum(reads, axis=1) < params.min_depth
-    if i.sum() > 0:
-        reads = reads[np.logical_not(i), :]
-        array = array[np.logical_not(i), :]
+    depth = np.sum(reads, axis=1)
+    i = depth >= params.min_depth
+    if i.sum() < len(lines):
+        reads = reads[i, :]
+        array = array[i, :]
+        depth = depth[i]
 
     ## basic vars
     
-    BASES = ['A', 'T', 'C', 'G']
+    BASES = np.array(['A', 'T', 'C', 'G'])
     N_rows, _ = array.shape
 
     refs = array[:,1]
@@ -404,8 +374,9 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
 
     i_sig = p_value < params.pvalue
 
-    if i_sig.sum() == 0:
-        return(None)
+    # number of mutative sites
+    n_sig = i_sig.sum()
+    if n_sig == 0: return(None)
 
     # return singnificant sites only
 
@@ -414,13 +385,13 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
     poss = array[i_sig, 2]
     reffs = refs[i_sig]
 
-
     # allele frequencies
     allele_freq = post_mx[i_sig,:] @ params.allele_weights.T
 
     # strand coverage
     DP_watson = np.sum(reads[i_sig, :4], axis=1)
     DP_crick = np.sum(reads[i_sig, 4:8], axis=1)
+    depths = depth[i_sig]
 
     # probability of homozygote
     p_homozyte = np.sum(post_mx[i_sig, :4], axis=1)
@@ -436,7 +407,7 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
     # res.format_ouptput()
 
     res_snv = []
-    for i in range(len(chrs)):
+    for i in range(n_sig):
         res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
         chrs[i], poss[i], reffs[i],
         p_values[i], p_homozyte[i],
@@ -444,7 +415,67 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
         DP_watson[i], DP_crick[i]
         ))
 
-    res_vcf = None
+    ## vcf results
+
+    # BASES_dict = {'A':0, 'T':1, 'C':2, 'G':3}
+
+    vcf_QUAL = np.fmin(512, np.int32(np.around(-10*np.log10(p_values))))
+
+    res_vcf = []
+    for i in range(n_sig):
+        # except the ref
+        a = BASES == reffs[i]
+        # alt = np.logical_and([True]*4, ~a)
+        alt = ~a
+        order = np.argsort(-allele_freq[i, alt])
+        BASES_ord = BASES[alt][order]
+        PROP_ALELLE = allele_freq[i, alt][order]
+
+        vcf_ID = '.'
+        # if p_homozyte[i] < 0.8:
+        b = PROP_ALELLE > 0.05
+        if b.sum() == 0:
+            vcf_ALT = '.'
+        else:
+            vcf_ALT = ','.join(BASES_ord[b])
+
+        # vcf_FILTER = []
+        # if p_values[i] < 0.01: vcf_FILTER.append('q30')
+        # if depths[i] <= 6: vcf_FILTER.append('dp6')
+        vcf_FILTER = 'PASS'
+
+        # allele frequency
+        vcf_af = ','.join(['%.2f' % x for x in PROP_ALELLE[b]])
+        vcf_INFO = f'NS=1,DP={depths[i]},DPW={DP_watson[i]},DPC={DP_crick[i]}'
+        if b.sum() != 0:
+            vcf_INFO += f',AF={vcf_af}'
+
+        vcf_FORMAT = 'GT:GQ:DP:DPW:DPC'
+        
+        # score of homozygote
+        vcf_QUAL_HM = np.fmin(512, np.int32(np.around(-10*np.log10(1-p_homozyte))))
+        # score of heterzygote
+        vcf_QUAL_HT = np.fmin(512, np.int32(np.around(-10*np.log10(p_homozyte))))
+
+        # genotype 
+        if p_homozyte[i] > 0.5:
+            vcf_GQ = vcf_QUAL_HM[i]
+            if allele_freq[i, a] > PROP_ALELLE[0]:
+                vcf_GT = '0'
+                vcf_ALT = '.'
+            else:
+                vcf_GT = '1'
+                vcf_ALT = BASES_ord[0]
+        else:
+            vcf_GQ = vcf_QUAL_HT[i]
+            if allele_freq[i, a] > PROP_ALELLE[1]:
+                vcf_GT = '0/1'
+            else:
+                vcf_GT = '1/2'
+
+        vcf_SAMPLE = f'{vcf_GT}:{vcf_GQ}:{depths[i]}:{DP_watson[i]}:{DP_crick[i]}'
+
+        res_vcf.append(f'{chrs[i]}\t{poss[i]}\t{vcf_ID}\t{reffs[i]}\t{vcf_ALT}\t{vcf_QUAL[i]}\t{vcf_FILTER}\t{vcf_INFO}\t{vcf_FORMAT}\t{vcf_SAMPLE}\n')
 
     return SNVResultsBatch(snv=res_snv, vcf=res_vcf)
     # return (res_snv, res_vcf)
@@ -482,28 +513,6 @@ class LineFile:
         if not self.input.closed:
             self.input.close()
 
-# class WaitTimeSchimitter:
-#     def __init__(self, thres_u:int, thres_l:int, wtime: float, FLAG_WAIT: str):
-#         self.thres_u = thres_u
-#         self.thres_l = thres_l
-#         self.wtime = wtime
-#         self.FLAG_WAIT = FLAG_WAIT
-
-#     def setWaitTimeFlag(self, k:int):
-#         if self.FLAG_WAIT == 'upper':
-#             if k < self.thres_l:
-#                 self.FLAG_WAIT = 'lower'
-#         elif self.FLAG_WAIT == 'lower':
-#             if k > self.thres_u:
-#                 self.FLAG_WAIT = 'upper'
-
-#     def waitTime(self, k: int):
-#         self.setWaitTimeFlag(k)
-#         if self.FLAG_WAIT == 'upper':
-#             time.sleep(self.wtime)
-            
-#             print(f'Waiting: {self.FLAG_WAIT}, {k}')
-
 
 if __name__ == '__main__':
 
@@ -512,7 +521,7 @@ if __name__ == '__main__':
     usage = 'Usage: BS-SNA-Caller.py -i sample.atcg.gz [options]'
 
     parser = OptionParser(usage)
-    parser.add_option('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, read fron stdio in unspecified', type="string")
+    parser.add_option('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, read from STDIO if unspecified', type="string")
     parser.add_option('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, say for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equilant to setting -o path/sample', type="string")
     parser.add_option('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type="float", default=0.001)
     parser.add_option('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type="float", default=0.03)
@@ -529,30 +538,39 @@ if __name__ == '__main__':
     (options, _) = parser.parse_args()
 
 
-    
     ############################
     ##
-
-    # TASKS_IN_QUEUE = 0
-
-    # infile = 'D:/Documents/GitHub/BS-SNV-Caller/data/atcg.large'
-    # outfile = 'D:/Documents/GitHub/BS-SNV-Caller/data/out'
 
     # model params
     params = SNVparams(options)
     params.set_model_params()
 
+    ## vcf header
+    VCF_HEADER = [
+        '##fileformat=VCFv4.4',
+        f'##fileDate=%s' % time.strftime("%Y%m%d", time.localtime()),
+        '##source=BS-SNV-Caller',
+        '##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">',
+        '##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">',
+        '##INFO=<ID=DPW,Number=1,Type=Integer,Description="Total Depth of Wastson Strand">',
+        '##INFO=<ID=DPC,Number=1,Type=Integer,Description="Total Depth of Crick Strand">',
+        '##FILTER=<ID=q30,Description="Quality < 30">',
+        '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">',
+        '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the alternative variant. So, we express the GQ as the Phred score (-10log10 (p-value)) of posterior probability of homozygote/heterozygote, namely, Prob(heterozygote) for homozygous sites and Prob(homozygote) for heterozygous sites. This is somewhat different with SNV calling from WGS data.">',
+        '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">',
+        '##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Wastson Strand">',
+        '##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">',
+        f'#CHROM\tPOS\tID\tREF\tALT\t\tQUAL\tFILTER\tINFO\tFORMAT\t{params.sampleID}'
+        ]
+
     # control writing results
     global wrt_ctl 
     wrt_ctl = ControlWriteFile(params)
-
     ATCGfile = LineFile(params.infile, params.batch_size)
 
-    # maintain an in-memory pool
-    # wait = WaitTimeSchimitter(params.num_process*options.pool_lower_num, 
-    #                           params.num_process*options.pool_upper_num, 
-    #                           0.01, 'lower')
-    
+    # write header lines of vcf file
+    wrt_ctl.out_vcf.writelines(VCF_HEADER)
+
     # multi-process parallelization
     with Pool(processes=params.num_process) as pool:
         while True: 
