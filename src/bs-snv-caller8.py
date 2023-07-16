@@ -11,12 +11,12 @@ from multiprocessing import Pool
 # from scipy.stats import multinomial
 # dmultinom = multinomial.pmf
 
-from optparse import OptionParser
-# from optparse import Values
+from argparse import ArgumentParser
+from argparse import Namespace
 
 
 class SNVparams:
-    def __init__(self, args: Values):
+    def __init__(self, args: Namespace):
         self.infile = args.infile
         self.outprefix = args.outprefix
         self.mutation_rate = args.mutation_rate/3
@@ -159,6 +159,24 @@ class SNVparams:
         self.out_snv = self.outprefix + ".snv.gz"
         self.out_vcf = self.outprefix + ".vcf.gz"
 
+                
+        ## vcf header
+        self.VCF_HEADER = [
+            '##fileformat=VCFv4.4\n',
+            f'##fileDate=%s\n' % time.strftime("%Y%m%d", time.localtime()),
+            '##source=BS-SNV-Caller\n',
+            '##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">\n',
+            '##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">\n',
+            '##INFO=<ID=DPW,Number=1,Type=Integer,Description="Total Depth of Wastson Strand">\n',
+            '##INFO=<ID=DPC,Number=1,Type=Integer,Description="Total Depth of Crick Strand">\n',
+            '##FILTER=<ID=q30,Description="Quality < 30">\n',
+            '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n',
+            '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the alternative variant. So, we express the GQ as the Phred score (-10log10 (p-value)) of posterior probability of homozygote/heterozygote, namely, Prob(heterozygote) for homozygous sites and Prob(homozygote) for heterozygous sites. This is somewhat different with SNV calling from WGS data.">\n',
+            '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">\n',
+            '##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Wastson Strand">\n',
+            '##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">\n',
+            f'#CHROM\tPOS\tID\tREF\tALT\t\tQUAL\tFILTER\tINFO\tFORMAT\t{self.sampleID}\n'
+            ]
 
     def set_model_params(self):
         self.set_out_files()
@@ -266,6 +284,7 @@ SNVResultsBatch = namedtuple('SNVResultsBatch', ['snv', 'vcf'])
 #             for l in self.res_vcf:
 #                 wrt_ctl.out_vcf.write(l)
 
+
 # .snv format output
 def format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick):
 
@@ -294,6 +313,39 @@ def write_lines(res: SNVResultsBatch):
         wrt_ctl.out_snv.writelines(res.snv)
     if res.vcf is not None:
         wrt_ctl.out_vcf.writelines(res.vcf)
+
+
+class LineFile:
+    def __init__(self, filename: str, batchSize: int):
+        if filename.endswith(".gz") :
+            self.input = gzip.open(filename, 'rt')
+        else :
+            self.input = io.open(filename, 'r')
+        self.batchSize = batchSize
+        self.exhausted = False
+    # def __iter__(self):
+    #     return self
+    def __next__(self):
+        if self.exhausted:
+            return None
+        
+        # number of readed lines 
+        i = 0
+        lines = []
+        while (l := self.input.readline().strip()) and (i < self.batchSize):
+            lines.append(l)
+            i += 1
+        if i < self.batchSize:
+            self.exhausted = True
+
+        if i > 0:
+            return lines
+        else:
+            return None
+
+    def close(self):
+        if not self.input.closed:
+            self.input.close()
 
 
 # @jit(nopython=True)
@@ -480,64 +532,8 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
     return SNVResultsBatch(snv=res_snv, vcf=res_vcf)
     # return (res_snv, res_vcf)
 
-
-class LineFile:
-    def __init__(self, filename: str, batchSize: int):
-        if filename.endswith(".gz") :
-            self.input = gzip.open(filename, 'rt')
-        else :
-            self.input = io.open(filename, 'r')
-        self.batchSize = batchSize
-        self.exhausted = False
-    # def __iter__(self):
-    #     return self
-    def __next__(self):
-        if self.exhausted:
-            return None
-        
-        # number of readed lines 
-        i = 0
-        lines = []
-        while (l := self.input.readline().strip()) and (i < self.batchSize):
-            lines.append(l)
-            i += 1
-        if i < self.batchSize:
-            self.exhausted = True
-
-        if i > 0:
-            return lines
-        else:
-            return None
-
-    def close(self):
-        if not self.input.closed:
-            self.input.close()
-
-
-if __name__ == '__main__':
-
-    # parse command line
+def BS_SNV_CAller(options: Namespace):
     
-    usage = 'Usage: BS-SNA-Caller.py -i sample.atcg.gz [options]'
-
-    parser = OptionParser(usage)
-    parser.add_option('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, read from STDIO if unspecified', type="string")
-    parser.add_option('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, say for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equilant to setting -o path/sample', type="string")
-    parser.add_option('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type="float", default=0.001)
-    parser.add_option('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type="float", default=0.03)
-    parser.add_option('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type="float", default=0.6)
-    parser.add_option('-n', '--methy-ch', dest='methy_ncg', help='Cytosine methylation rate of non-CpG-context', type="float", default=0.01)
-    parser.add_option('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than min DP will be skipped', type="int", default=10)
-    parser.add_option('-p', '--pvalue', dest='pvalue', help='p-value threshodl', type="float", default=0.01)
-    parser.add_option('--shrink-depth', dest='shrink_depth', help='sites with coverage larger than this value will be shrinked by a square-root transform', type="int", default=60)
-    parser.add_option('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type="int", default=100000)
-    parser.add_option('-P', '--num-process', dest='num_process', help='number of processes in parallel', type="int", default=4)
-    parser.add_option('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type="int", default=10)
-    parser.add_option('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type="int", default=30)
-
-    (options, _) = parser.parse_args()
-
-
     ############################
     ##
 
@@ -545,31 +541,13 @@ if __name__ == '__main__':
     params = SNVparams(options)
     params.set_model_params()
 
-    ## vcf header
-    VCF_HEADER = [
-        '##fileformat=VCFv4.4',
-        f'##fileDate=%s' % time.strftime("%Y%m%d", time.localtime()),
-        '##source=BS-SNV-Caller',
-        '##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">',
-        '##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">',
-        '##INFO=<ID=DPW,Number=1,Type=Integer,Description="Total Depth of Wastson Strand">',
-        '##INFO=<ID=DPC,Number=1,Type=Integer,Description="Total Depth of Crick Strand">',
-        '##FILTER=<ID=q30,Description="Quality < 30">',
-        '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">',
-        '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the alternative variant. So, we express the GQ as the Phred score (-10log10 (p-value)) of posterior probability of homozygote/heterozygote, namely, Prob(heterozygote) for homozygous sites and Prob(homozygote) for heterozygous sites. This is somewhat different with SNV calling from WGS data.">',
-        '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">',
-        '##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Wastson Strand">',
-        '##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">',
-        f'#CHROM\tPOS\tID\tREF\tALT\t\tQUAL\tFILTER\tINFO\tFORMAT\t{params.sampleID}'
-        ]
-
     # control writing results
     global wrt_ctl 
     wrt_ctl = ControlWriteFile(params)
     ATCGfile = LineFile(params.infile, params.batch_size)
 
     # write header lines of vcf file
-    wrt_ctl.out_vcf.writelines(VCF_HEADER)
+    wrt_ctl.out_vcf.writelines(params.VCF_HEADER)
 
     # multi-process parallelization
     with Pool(processes=params.num_process) as pool:
@@ -592,3 +570,89 @@ if __name__ == '__main__':
         ATCGfile.close()
         wrt_ctl.close()
     
+
+def BS_SNV_CAller_keep_order(options: Namespace):
+    
+    ############################
+    ##
+
+    # model params
+    params = SNVparams(options)
+    params.set_model_params()
+
+    # control writing results
+    global wrt_ctl 
+    wrt_ctl = ControlWriteFile(params)
+    ATCGfile = LineFile(params.infile, params.batch_size)
+
+    # write header lines of vcf file
+    wrt_ctl.out_vcf.writelines(params.VCF_HEADER)
+
+    FLAG_LAST_BATCH = False
+    
+    # multi-process parallelization
+    with Pool(processes=params.num_process) as pool:
+        while True: 
+            if FLAG_LAST_BATCH: break
+            line_batches = []
+            i = 0
+            for _ in range(params.pool_upper_num*params.num_process):
+                line_batch = next(ATCGfile)
+                if not line_batch: 
+                    FLAG_LAST_BATCH = True
+                    break
+                else:
+                    line_batches.append(line_batch)
+                    i += 1
+
+            if i == 0: break
+            # pool.apply_async(BS_SNV_Caller_batch, (line_batch, params), callback=write_lines)
+
+            # pool.apply_async(calculate, (postp, (line_batch, args)), callback=writeLine)
+            # results = pool.apply_async(BS_SNV_Caller_batch, (params,))
+            results = [pool.apply_async(BS_SNV_Caller_batch, (lines, params)) for lines in line_batches]
+
+            for res in results:
+                write_lines(res.get())
+
+
+        pool.close()
+        pool.join()
+        ATCGfile.close()
+        wrt_ctl.close()
+
+def as_bool(x: str):
+    x = x.upper()
+    if x == 'TRUE': return True
+    if x == 'False': return False
+    return None
+
+if __name__ == '__main__':
+
+    # parse command line
+    
+    usage = 'Usage: BS-SNA-Caller.py -i sample.atcg.gz [options]'
+    desc = 'SNV caller with bisulite-converted sequencing data'
+
+    parser = ArgumentParser(description=desc)
+    parser.add_argument('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, read from STDIO if unspecified', type=str)
+    parser.add_argument('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, say for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equilant to setting -o path/sample', type=str)
+    parser.add_argument('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type=float, default=0.001)
+    parser.add_argument('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type=float, default=0.03)
+    parser.add_argument('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type=float, default=0.6)
+    parser.add_argument('-n', '--methy-ch', dest='methy_ncg', help='Cytosine methylation rate of non-CpG-context', type=float, default=0.01)
+    parser.add_argument('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than min DP will be skipped', type=int, default=10)
+    parser.add_argument('-p', '--pvalue', dest='pvalue', help='p-value threshodl', type=float, default=0.01)
+    parser.add_argument('--shrink-depth', dest='shrink_depth', help='sites with coverage larger than this value will be shrinked by a square-root transform', type=int, default=60)
+    parser.add_argument('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type=int, default=100000)
+    parser.add_argument('-P', '--num-process', dest='num_process', help='number of processes in parallel', type=int, default=4)
+    parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
+    parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type=int, default=30)
+    parser.add_argument('--sort', dest='sort', help='keep the results same order with input', type=as_bool, default=True)
+
+    options = parser.parse_args()
+
+    if options.sort:
+        BS_SNV_CAller_keep_order(options)
+    else:
+        BS_SNV_CAller(options)
