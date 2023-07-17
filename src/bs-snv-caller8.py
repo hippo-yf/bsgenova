@@ -648,7 +648,7 @@ if __name__ == '__main__':
     parser.add_argument('-P', '--num-process', dest='num_process', help='number of processes in parallel', type=int, default=4)
     parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
     parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type=int, default=30)
-    parser.add_argument('--sort', dest='sort', help='keep the results same order with input', type=as_bool, default=True)
+    parser.add_argument('--keep-order', dest='sort', help='keep the results same order with input', type=as_bool, default=True)
 
     options = parser.parse_args()
 

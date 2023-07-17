@@ -15,7 +15,7 @@
             "-i", "./data/atcg.example",
             "-P", "1",
             "-p", "0.05",
-            "--sort", "True",
+            "--keep-order", "True",
             "--pool-upper-num", "8"
         ]
         }
