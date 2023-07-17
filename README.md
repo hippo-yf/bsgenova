@@ -41,6 +41,10 @@ Just git clone / download this repository, run in an environment with python3 an
 |`--keep-order` |`logical` | keep the results same order with input, if the order of sites makes no difference, set `False` to enable faster non-blocking asynchronous IO |True|
 |`-h`, `--help` | | show this help message and exit ||
 
+## Input
+
+a .ATCG file, returned by `bsseeker2/3` or `cgmaptools`
+
 ## Output
 
 ### .snv file
@@ -106,7 +110,7 @@ an example (header lines are ommited)
 
 ## Performance
 
-*BS-SNV-Caller* implementes parallelism with `multiprocessing`, the default number of processes is 4, at which the acceratation is about 3.8 times than single-process run.
+*BS-SNV-Caller* implementes parallelism with `multiprocessing`, the default number of processes is 4, at which the acceratation is about 3.8 times faster than single-process run.
 
 By maintaining a pool in memory, the maximum memory usage can be limited by parameter `--pool-upper-num`. The maxumun lines/sites is  `num-process` $\times$ `pool-upper-num` $\times$ `batch-size`. With defaults: `--pool-upper-num 30`, `--num-process 4`, and `--batch-size 100000`  the memory usage is ~1GB.
 
