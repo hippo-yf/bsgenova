@@ -107,7 +107,6 @@ an example
 1	1024664	.	C	T	92	PASS	NS=1,DP=23,DPW=18,DPC=5,AF=0.74	GT:GQ:DP:DPW:DPC	0/1:3:23:18:5
 ```
 
-
 ## Performance
 
 *BS-SNV-Caller* implementes parallelism with `multiprocessing`, the default number of processes is 4, at which the acceratation is about 3.8 times faster than single-process run.
