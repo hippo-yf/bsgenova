@@ -78,7 +78,7 @@ an example
 
 Standard .vcf file.
 
-an example (header lines are ommited)
+an example
 
 ```
 ##fileformat=VCFv4.4
