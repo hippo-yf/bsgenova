@@ -460,7 +460,7 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
 
     res_snv = []
     for i in range(n_sig):
-        res_snv.append('%s\t%s\t%s\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%.6e\t%d\t%d\n' % (
+        res_snv.append('%s\t%s\t%s\t%.2e\t%.2e\t%.2e\t%.2e\t%.2e\t%.2e\t%d\t%d\n' % (
         chrs[i], poss[i], reffs[i],
         p_values[i], p_homozyte[i],
         allele_freq[i,0], allele_freq[i,1], allele_freq[i,2], allele_freq[i,3],
@@ -642,7 +642,7 @@ if __name__ == '__main__':
     parser.add_argument('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type=float, default=0.6)
     parser.add_argument('-n', '--methy-ch', dest='methy_ncg', help='Cytosine methylation rate of non-CpG-context', type=float, default=0.01)
     parser.add_argument('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than min DP will be skipped', type=int, default=10)
-    parser.add_argument('-p', '--pvalue', dest='pvalue', help='p-value threshodl', type=float, default=0.01)
+    parser.add_argument('-p', '--pvalue', dest='pvalue', help='p-value threshold', type=float, default=0.01)
     parser.add_argument('--shrink-depth', dest='shrink_depth', help='sites with coverage larger than this value will be shrinked by a square-root transform', type=int, default=60)
     parser.add_argument('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type=int, default=100000)
     parser.add_argument('-P', '--num-process', dest='num_process', help='number of processes in parallel', type=int, default=4)
