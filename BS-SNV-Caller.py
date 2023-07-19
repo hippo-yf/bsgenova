@@ -646,8 +646,8 @@ def BS_SNV_CAller_single_process(options: Namespace):
 
 def as_bool(x: str):
     x = x.upper()
-    if x in ["TRUE", "YES", "Y"] : return True
-    if x in ["FALSE", "NO", "N"] : return False
+    if x in ["TRUE", "T", "YES", "Y"] : return True
+    if x in ["FALSE", "F", "NO", "N"] : return False
     return None
 
 if __name__ == '__main__':
@@ -671,13 +671,13 @@ if __name__ == '__main__':
     parser.add_argument('-P', '--num-process', dest='num_process', help='number of processes in parallel', type=int, default=4)
     parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
     parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type=int, default=30)
-    parser.add_argument('--keep-order', dest='sort', help='keep the results same order with input, true/false, or yes/no', type=as_bool, default=True)
+    parser.add_argument('--keep-order', dest='keep_order', help='keep the results same order with input, true/false, or yes/no', type=as_bool, default=True)
 
     options = parser.parse_args()
 
     if options.num_process == 1:
         BS_SNV_CAller_single_process(options)
-    elif options.sort:
+    elif options.keep_order:
         BS_SNV_CAller_keep_order(options)
     else:
         BS_SNV_CAller(options)

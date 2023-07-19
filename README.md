@@ -4,7 +4,7 @@ An **ultra-fast** and **accurate** Single-Nucleotide Variant (SNV) Caller with *
 
 - Enable synergistic analysis of genetic and epigenetic questions using BS-seq, RRBS, WGBS data and so on.
 
-- Finish whole-genome SNV calling within an hour in a 4-core CPU and 1GB memory laptop
+- Finish whole-genome SNV calling within an hour in a 4-core CPU and <1GB memory laptop
 
 ## Example
 
@@ -34,7 +34,7 @@ Just git clone / download this repository, run in an environment with python3 an
 |`-d`, `--min-depth` |`float` | sites with coverage depth less than min DP will be skipped | 10|
 |`-p`, `--pvalue` |`float` | *p*-value threshold |0.01|
 |`--shrink-depth` |`integer` | sites with coverage larger than this value will be shrinked by a square-root transform | 60|
-|`--batch-size` |`integer` | a batch of genomic sites will be processed at the same time |100000|
+|`--batch-size` |`integer` | a batch of genomic sites will be processed at the same time |10000|
 |`-P`, `--num-process` |`integer` | number of processes in parallel |4|
 |`--pool-lower-num` |`integer` | lower number of bacthes in memory pool per process |10|
 |`--pool-upper-num` |`integer` | upper number of bacthes in memory pool per process |30|
@@ -111,5 +111,5 @@ an example
 
 *BS-SNV-Caller* implementes parallelism with `multiprocessing`, the default number of processes is 4, at which the acceratation is about 3.8 times faster than single-process run.
 
-By maintaining a pool in memory, the maximum memory usage can be limited by parameter `--pool-upper-num`. The maxumun lines/sites is  `num-process` $\times$ `pool-upper-num` $\times$ `batch-size`. With defaults: `--pool-upper-num 30`, `--num-process 4`, and `--batch-size 100000`  the memory usage is ~1GB.
+By maintaining a pool in memory, the maximum memory usage can be limited by parameter `--pool-upper-num`. The maxumun lines/sites is  `num-process` $\times$ `pool-upper-num` $\times$ `batch-size`. With defaults: `--pool-upper-num 30`, `--num-process 4`, and `--batch-size 10000`  the memory usage is <1GB.
 
