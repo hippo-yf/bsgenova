@@ -497,7 +497,7 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
         vcf_FILTER = 'PASS'
 
         # allele frequency
-        vcf_af = ','.join(['%.2f' % x for x in PROP_ALELLE[b]])
+        vcf_af = ','.join(['%.3f' % x for x in PROP_ALELLE[b]])
         vcf_INFO = f'NS=1,DP={depths[i]},DPW={DP_watson[i]},DPC={DP_crick[i]}'
         if b.sum() != 0:
             vcf_INFO += f',AF={vcf_af}'
@@ -621,10 +621,33 @@ def BS_SNV_CAller_keep_order(options: Namespace):
         ATCGfile.close()
         wrt_ctl.close()
 
+
+# diasble parallelism
+def BS_SNV_CAller_single_process(options: Namespace):
+
+    # model params
+    params = SNVparams(options)
+    params.set_model_params()
+
+    wrt_ctl = ControlWriteFile(params)
+    ATCGfile = LineFile(params.infile, params.batch_size)
+
+    # write header lines of vcf file
+    wrt_ctl.out_vcf.writelines(params.VCF_HEADER)
+
+    while line_batch := next(ATCGfile):
+        res = BS_SNV_Caller_batch(line_batch, params)
+        wrt_ctl.out_snv.writelines(res.snv)
+        wrt_ctl.out_vcf.writelines(res.vcf)
+
+    ATCGfile.close()
+    wrt_ctl.close()
+
+
 def as_bool(x: str):
     x = x.upper()
-    if x == 'TRUE': return True
-    if x == 'False': return False
+    if x in ["TRUE", "YES", "Y"] : return True
+    if x in ["FALSE", "NO", "N"] : return False
     return None
 
 if __name__ == '__main__':
@@ -648,11 +671,13 @@ if __name__ == '__main__':
     parser.add_argument('-P', '--num-process', dest='num_process', help='number of processes in parallel', type=int, default=4)
     parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
     parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type=int, default=30)
-    parser.add_argument('--keep-order', dest='sort', help='keep the results same order with input', type=as_bool, default=True)
+    parser.add_argument('--keep-order', dest='sort', help='keep the results same order with input, true/false, or yes/no', type=as_bool, default=True)
 
     options = parser.parse_args()
 
-    if options.sort:
+    if options.num_process == 1:
+        BS_SNV_CAller_single_process(options)
+    elif options.sort:
         BS_SNV_CAller_keep_order(options)
     else:
         BS_SNV_CAller(options)
