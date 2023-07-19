@@ -667,7 +667,7 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than min DP will be skipped', type=int, default=10)
     parser.add_argument('-p', '--pvalue', dest='pvalue', help='p-value threshold', type=float, default=0.01)
     parser.add_argument('--shrink-depth', dest='shrink_depth', help='sites with coverage larger than this value will be shrinked by a square-root transform', type=int, default=60)
-    parser.add_argument('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type=int, default=100000)
+    parser.add_argument('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type=int, default=10000)
     parser.add_argument('-P', '--num-process', dest='num_process', help='number of processes in parallel', type=int, default=4)
     parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
     parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type=int, default=30)

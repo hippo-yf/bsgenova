@@ -38,7 +38,7 @@ Just git clone / download this repository, run in an environment with python3 an
 |`-P`, `--num-process` |`integer` | number of processes in parallel |4|
 |`--pool-lower-num` |`integer` | lower number of bacthes in memory pool per process |10|
 |`--pool-upper-num` |`integer` | upper number of bacthes in memory pool per process |30|
-|`--keep-order` |`logical` | keep the results same order with input, if the order of sites makes no difference, set `False` to enable faster non-blocking asynchronous IO |True|
+|`--keep-order` |`logical` | keep the results same order with input, if the order of sites makes no difference, set `False` to enable faster non-blocking asynchronous IO, True/False or Yes/No, case insensitive | True|
 |`-h`, `--help` | | show this help message and exit ||
 
 ## Input
