@@ -16,6 +16,9 @@ from multiprocessing import Pool
 from argparse import ArgumentParser
 from argparse import Namespace
 
+import logging
+logging.basicConfig(format='%(asctime)s - %(message)s')
+
 
 class SNVparams:
     def __init__(self, args: Namespace):
@@ -331,12 +334,19 @@ class LineFile:
         if self.exhausted:
             return None
         
-        # number of readed lines 
+        # number of read lines 
         i = 0
         lines = []
-        while (l := self.input.readline().strip()) and (i < self.batchSize):
-            lines.append(l)
-            i += 1
+
+        try:
+            while (l := self.input.readline().strip()) and (i < self.batchSize):
+                lines.append(l)
+                i += 1
+        except EOFError:
+            logging.warning('EOFError: Compressed file ended before the end-of-stream marker was reached')
+        except:
+            pass
+
         if i < self.batchSize:
             self.exhausted = True
 
@@ -507,7 +517,8 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
         vcf_FORMAT = 'GT:GQ:DP:DPW:DPC'
         
         # score of homozygote
-        EPS = 10**(-512/10) # max score of 512
+        # max score of 512
+        EPS = 10**(-512/10)
 
         vcf_QUAL_HM = np.fmin(512, np.int32(np.around(-10*np.log10(np.max(EPS, 1-p_homozyte)))))
         # score of heterzygote
