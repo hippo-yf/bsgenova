@@ -345,7 +345,7 @@ class LineFile:
         except EOFError:
             logging.warning('EOFError: Compressed file ended before the end-of-stream marker was reached')
         except:
-            pass
+            logging.warning('FileError: An error occurred while reading input file')
 
         if i < self.batchSize:
             self.exhausted = True
