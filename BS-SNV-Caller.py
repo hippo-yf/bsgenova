@@ -483,7 +483,11 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
 
     # BASES_dict = {'A':0, 'T':1, 'C':2, 'G':3}
 
-    vcf_QUAL = np.fmin(512, np.int32(np.around(-10*np.log10(p_values))))
+    # max score of 1024
+    MAX_PHRED_SCORE = 2**10
+    EPS = 10**(-MAX_PHRED_SCORE/10)
+
+    vcf_QUAL = np.fmin(MAX_PHRED_SCORE, np.int32(np.around(-10*np.log10(np.fmax(EPS, p_values)))))
 
     res_vcf = []
     for i in range(n_sig):
@@ -517,12 +521,10 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
         vcf_FORMAT = 'GT:GQ:DP:DPW:DPC'
         
         # score of homozygote
-        # max score of 512
-        EPS = 10**(-512/10)
 
-        vcf_QUAL_HM = np.fmin(512, np.int32(np.around(-10*np.log10(np.max(EPS, 1-p_homozyte)))))
+        vcf_QUAL_HM = np.fmin(MAX_PHRED_SCORE, np.int32(np.around(-10*np.log10(np.fmax(EPS, 1-p_homozyte)))))
         # score of heterzygote
-        vcf_QUAL_HT = np.fmin(512, np.int32(np.around(-10*np.log10(np.max(EPS, p_homozyte)))))
+        vcf_QUAL_HT = np.fmin(MAX_PHRED_SCORE, np.int32(np.around(-10*np.log10(np.fmax(EPS, p_homozyte)))))
 
         # genotype 
         if p_homozyte[i] > 0.5:
