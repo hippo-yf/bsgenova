@@ -6,6 +6,8 @@ import numpy as np
 from typing import NamedTuple
 # import array
 import gzip
+import io
+import sys
 from argparse import ArgumentParser
 
 ##
@@ -184,7 +186,12 @@ def methylExtractor(params: Parameters) -> None:
 
 
     # outputs
-    outfile_atcg = gzip.open(params.out_atcg, 'wt')
+    if params.out_atcg == '-':
+        outfile_atcg = sys.stdout
+    elif params.out_atcg.endswith('.gz'):
+        outfile_atcg = gzip.open(params.out_atcg, 'wt')
+    else:
+        outfile_atcg = io.open(params.out_atcg, 'wt')
 
     intervals = iter(GenomicIntervalGenerator(fa, 
                                               chrs= params.chr, 
@@ -271,8 +278,8 @@ if __name__ == '__main__':
     parser = ArgumentParser(description=desc)
     parser.add_argument('-b', '--bam-file', dest='in_bam', help='an input .bam file', type=str, required=True)
     parser.add_argument('-g', '--reference-genome', dest='in_fa', help='genome reference file .fa with index (.fai) in the same path', type=str, required=True)
-    parser.add_argument('-a', '--output-atcgmap', dest='out_atcg', help='ATCGmap file', type=str, required=True)
-    parser.add_argument('--swap-strand', dest='swap_strand', help='swap read counts on two strands, true/false, or yes/no', type=as_bool, required=True)
+    parser.add_argument('-a', '--output-atcgmap', dest='out_atcg', help='ATCGmap file', type=str, required=False, default='-')
+    parser.add_argument('--swap-strand', dest='swap_strand', help='swap read counts on two strands, true/false, or yes/no', type=as_bool, required=False, default='no')
 
     # parser.add_argument('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type=float, default=0.001)
     # parser.add_argument('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type=float, default=0.03)
@@ -295,19 +302,14 @@ if __name__ == '__main__':
                         chr="all",  # 'all' for all chrs
                         start=0,
                         end=math.inf,
-                        # end=10_000,
-                        step=100_000,
+                        # end=50_000_000,
+                        step=2_000_000,
                         quality_threshold=15, # base seq quality
                         context_size=3, # size of CHG/...
                         coordinate_base=0, # 0/1-based
                         swap_strand=options.swap_strand  # swap counts of two strands
                         )
     methylExtractor(params)
-
-
-
-
-
 
 
 
