@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import time
+import sys
 import os
 import io
 import gzip
@@ -322,7 +323,9 @@ def write_lines(res: SNVResultsBatch):
 
 class LineFile:
     def __init__(self, filename: str, batchSize: int):
-        if filename.endswith(".gz") :
+        if filename == "-":
+            self.input = sys.stdin
+        elif filename.endswith(".gz") :
             self.input = gzip.open(filename, 'rt')
         else :
             self.input = io.open(filename, 'r')
@@ -675,7 +678,7 @@ if __name__ == '__main__':
     desc = 'SNV caller with bisulite-converted sequencing data'
 
     parser = ArgumentParser(description=desc)
-    parser.add_argument('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file', type=str, required=True)
+    parser.add_argument('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, default: read from stdin', type=str, required=False, default="-")
     parser.add_argument('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, say for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equilant to setting -o path/sample', type=str)
     parser.add_argument('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type=float, default=0.001)
     parser.add_argument('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type=float, default=0.03)
