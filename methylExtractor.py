@@ -130,7 +130,7 @@ class Coverage(NamedTuple):
 
 def check_read(forward_read: bool):
     def valid_read(read: pysam.AlignedSegment):
-        return (forward_read ^ read.is_reverse) and (not read.is_unmapped) and (not read.is_duplicate) and (not read.is_secondary) and (not read.is_qcfail)
+        return (forward_read ^ read.is_reverse) and (not read.is_unmapped) and (not read.is_duplicate) and (not read.is_secondary) and (not read.is_qcfail) and (read.mapping_quality>=20)
     return valid_read
 
 
