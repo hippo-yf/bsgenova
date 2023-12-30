@@ -46,23 +46,23 @@ class SNVparams:
 
     # transition prob of haploidy base
 
-    # def transA(self, pr):
-    #     return (1-3*self.mutation_rate-3*self.error_rate, 2*self.mutation_rate-self.mutation_rate*pr+self.error_rate, self.mutation_rate*pr+self.error_rate, self.mutation_rate+self.error_rate)
-    # def transT(self, pr):
-    #     return (self.mutation_rate+self.error_rate, 1-2*self.mutation_rate-self.mutation_rate*pr-3*self.error_rate, self.mutation_rate*pr+self.error_rate, self.mutation_rate+self.error_rate)
-    # def transC(self, pr):
-    #     return (self.mutation_rate+self.error_rate, self.mutation_rate+self.error_rate+(1-3*self.mutation_rate-3*self.error_rate)*(1-pr), (1-3*self.mutation_rate-3*self.error_rate)*pr, self.mutation_rate+self.error_rate)
-    # def transG(self, pr):
-    #     return (self.mutation_rate+self.error_rate, 2*self.mutation_rate-self.mutation_rate*pr+self.error_rate, self.mutation_rate*pr+self.error_rate, 1-3*self.mutation_rate-3*self.error_rate)
-
     def transA(self, pr):
-        return (1-3*self.error_rate, self.error_rate, self.error_rate, self.error_rate)
+        return (1-3*self.mutation_rate-3*self.error_rate, 2*self.mutation_rate-self.mutation_rate*pr+self.error_rate, self.mutation_rate*pr+self.error_rate, self.mutation_rate+self.error_rate)
     def transT(self, pr):
-        return (self.error_rate, 1-3*self.error_rate, self.error_rate, self.error_rate)
+        return (self.mutation_rate+self.error_rate, 1-2*self.mutation_rate-self.mutation_rate*pr-3*self.error_rate, self.mutation_rate*pr+self.error_rate, self.mutation_rate+self.error_rate)
     def transC(self, pr):
-        return (self.error_rate, 1-pr-3*self.error_rate+4*pr*self.error_rate, pr+self.error_rate+4*pr*self.error_rate, self.error_rate)
+        return (self.mutation_rate+self.error_rate, self.mutation_rate+self.error_rate+(1-3*self.mutation_rate-3*self.error_rate)*(1-pr), (1-3*self.mutation_rate-3*self.error_rate)*pr, self.mutation_rate+self.error_rate)
     def transG(self, pr):
-        return (self.error_rate, self.error_rate, self.error_rate, 1-3*self.error_rate)
+        return (self.mutation_rate+self.error_rate, 2*self.mutation_rate-self.mutation_rate*pr+self.error_rate, self.mutation_rate*pr+self.error_rate, 1-3*self.mutation_rate-3*self.error_rate)
+
+    # def transA(self, pr):
+    #     return (1-3*self.error_rate, self.error_rate, self.error_rate, self.error_rate)
+    # def transT(self, pr):
+    #     return (self.error_rate, 1-3*self.error_rate, self.error_rate, self.error_rate)
+    # def transC(self, pr):
+    #     return (self.error_rate, 1-pr-3*self.error_rate+4*pr*self.error_rate, pr+self.error_rate+4*pr*self.error_rate, self.error_rate)
+    # def transG(self, pr):
+    #     return (self.error_rate, self.error_rate, self.error_rate, 1-3*self.error_rate)
 
 
     def set_trans_prob(self):
@@ -133,7 +133,9 @@ class SNVparams:
         # prior
         # prior only depends on mutation rate
         # p = self.mis_rate
-        p = self.mutation_rate
+
+        # p = self.mutation_rate
+        p = 1./1000/3
         ps = np.array(((1-3*p)**2, p**2, 2*p*(1-3*p)))
 
         # 0-based
@@ -143,6 +145,16 @@ class SNVparams:
         priG = ps[np.array([2,2,2,1,2,3,2,3,2,3]) -1]
 
         self.priors = {'A': priA, 'T': priT, 'C': priC, 'G': priG}
+
+    def set_prior_noninfo(self):
+        # non-informative priors
+
+        p = 0.4 /2 # prop of C/G
+        q = (1-p*2) /2
+        ps = np.array([q**2, q**2, p**2, p**2, 2*p*q, 2*p*q, 2*q**2, 2*p**2, 2*p*q, 2*p*q])
+
+        self.priors = {'A': ps, 'T': ps, 'C': ps, 'G': ps}
+
 
     def set_allele_weights(self):
             
@@ -196,6 +208,7 @@ class SNVparams:
         self.set_trans_prob()
         self.set_likelihood()
         self.set_prior()
+        # self.set_prior_noninfo()
         self.set_allele_weights()
         
 
