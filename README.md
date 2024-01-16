@@ -14,6 +14,10 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 
 `python bs-snv-caller.py -i data/example.atcg.gz -o output/example`
 
+`./bsgenova.py -i K562.ATCGmap.gz -P 1`
+
+`./bsextractor.py -b K562.bam -g hg38.fa --output-atcgmap - --output-cgmap K562.CGmap.gz --output-bed K562.bed.gz --chr chr1 --start 1000000 --end 1100000 --swap-strand yes | ./bsgenova.py`
+
 It will generate the results: `output/example.snv.gz` and `output/example.vcf.gz`
 
 ## Installation and dependencies

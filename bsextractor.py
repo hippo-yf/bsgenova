@@ -127,6 +127,8 @@ class Parameters(NamedTuple):
     fafile: str
     bamfile: str
     out_atcg: str
+    out_cg: str
+    out_bed: str
     chr: str
     start: int
     end: int
@@ -178,7 +180,16 @@ class MyAlignmentFile(pysam.AlignmentFile):
         else:
             return Coverage(watson=np.array(cov_watson), crick=np.array(cov_crick))
 
-
+def myOpenFile(file: str):
+    if file == '':
+        return None
+    if file == '-':
+        outfile = sys.stdout
+    elif file.endswith('.gz'):
+        outfile = gzip.open(file, 'wt')
+    else:
+        outfile = io.open(file, 'wt')
+    return outfile
 
 def methylExtractor(params: Parameters) -> None:
     
@@ -186,13 +197,19 @@ def methylExtractor(params: Parameters) -> None:
     bam = MyAlignmentFile(params.bamfile, 'rb')
 
 
-    # outputs
-    if params.out_atcg == '-':
-        outfile_atcg = sys.stdout
-    elif params.out_atcg.endswith('.gz'):
-        outfile_atcg = gzip.open(params.out_atcg, 'wt')
-    else:
-        outfile_atcg = io.open(params.out_atcg, 'wt')
+    # output of atcgmap
+    # if params.out_atcg == '-':
+    #     outfile_atcg = sys.stdout
+    # elif params.out_atcg.endswith('.gz'):
+    #     outfile_atcg = gzip.open(params.out_atcg, 'wt')
+    # else:
+    #     outfile_atcg = io.open(params.out_atcg, 'wt')
+    outfile_atcg = myOpenFile(params.out_atcg)
+    outfile_cg = myOpenFile(params.out_cg)
+    
+    outfile_bed = myOpenFile(params.out_bed)
+    if outfile_bed is not None:
+        outfile_bed.write("track type=bedGraph\n")
 
     intervals = iter(GenomicIntervalGenerator(fa, 
                                               chrs= params.chr, 
@@ -211,10 +228,7 @@ def methylExtractor(params: Parameters) -> None:
 
         # bam coverages
         try:
-            covs = bam.Watson_Crick_coverage(intrv, 
-                                            quality_threshold=params.quality_threshold, 
-                                            swap_strand=params.swap_strand
-                                            )
+            covs = bam.Watson_Crick_coverage(intrv, params)
             cov_sum_W = np.sum(covs.watson, axis=0)
             cov_sum_C = np.sum(covs.crick, axis=0)
         except KeyError:
@@ -228,7 +242,6 @@ def methylExtractor(params: Parameters) -> None:
             if cov_sum_W[i]+cov_sum_C[i] == 0:
                 continue
             
-
             j = i+2
             base = bases[j]
             if base == 'C':
@@ -242,6 +255,12 @@ def methylExtractor(params: Parameters) -> None:
                 nCT = covs.watson[1,i]+covs.watson[3,i]
                 meth_ratio = covs.watson[1,i]/nCT if nCT>0 else math.nan
 
+                # write output files
+                if (outfile_cg is not None) and nCT>0:
+                    outfile_cg.write(f'{intrv.chr}\t{base}\t{intrv.start+i+params.coordinate_base}\t{CG_context}\t{dicontext}\t{meth_ratio:.2f}\t{covs.watson[1,i]}\t{nCT}\n')
+                if (outfile_bed is not None) and nCT>0 and CG_context=='CG':
+                    outfile_bed.write(f'{intrv.chr}\t{intrv.start+i+params.coordinate_base}\t{intrv.start+i+params.coordinate_base+1}\t{math.floor(meth_ratio*100)}\n')
+
             elif base == 'G':
                 bases_con = bases[(j-consize+1):(j+1)]
                 CG_context = '--' if 'N' in bases_con else CG_CONTEXT_REVERSE_HASH[bases_con]
@@ -251,6 +270,12 @@ def methylExtractor(params: Parameters) -> None:
 
                 nGA = covs.crick[2,i]+covs.crick[0,i]
                 meth_ratio = covs.crick[2,i]/nGA if nGA>0 else math.nan
+
+                # write output files
+                if (outfile_cg is not None) and nGA>0:
+                    outfile_cg.write(f'{intrv.chr}\t{base}\t{intrv.start+i+params.coordinate_base}\t{CG_context}\t{dicontext}\t{meth_ratio:.2f}\t{covs.crick[2,i]}\t{nGA}\n')
+                if (outfile_bed is not None) and nGA>0 and CG_context=='CG':
+                    outfile_bed.write(f'{intrv.chr}\t{intrv.start+i+params.coordinate_base}\t{intrv.start+i+params.coordinate_base+1}\t{math.floor(meth_ratio*100)}\n')
             else:
                 CG_context = dicontext = "--"
                 meth_ratio = math.nan
@@ -258,14 +283,21 @@ def methylExtractor(params: Parameters) -> None:
             # write files
             # compatiable with ATCGmap file foramt
 
-            outfile_atcg.write(f'{intrv.chr}\t{base}\t{intrv.start+i+params.coordinate_base}\t{CG_context}\t{dicontext}\t{covs.watson[0,i]}\t{covs.watson[3,i]}\t{covs.watson[1,i]}\t{covs.watson[2,i]}\t0\t{covs.crick[0,i]}\t{covs.crick[3,i]}\t{covs.crick[1,i]}\t{covs.crick[2,i]}\t0\t{meth_ratio:.2f}\n')
+            if outfile_atcg is not None:
+                outfile_atcg.write(f'{intrv.chr}\t{base}\t{intrv.start+i+params.coordinate_base}\t{CG_context}\t{dicontext}\t{covs.watson[0,i]}\t{covs.watson[3,i]}\t{covs.watson[1,i]}\t{covs.watson[2,i]}\t0\t{covs.crick[0,i]}\t{covs.crick[3,i]}\t{covs.crick[1,i]}\t{covs.crick[2,i]}\t0\t{meth_ratio:.2f}\n')
+
 
     
     # close file handles
 
     fa.close()
     bam.close()
-    outfile_atcg.close()
+    if (outfile_atcg is not None) and (outfile_atcg != "-"):
+        outfile_atcg.close()
+    if (outfile_cg is not None) and (outfile_cg != "-"):
+        outfile_cg.close()
+    if (outfile_bed is not None) and (outfile_bed != "-"):
+        outfile_bed.close()
 
 
 if __name__ == '__main__':
@@ -273,16 +305,18 @@ if __name__ == '__main__':
 
     # parse command line
     
-    usage = 'Usage: methylExtrator -i sample.bam -g genome.fa -o sample.ATCGmap.gz [options]'
-    desc = 'Extract ATCG (ATCGmap) and CG (CGmap) profiles from bam file'
+    usage = 'Usage: methylExtrator -b sample.bam -g genome.fa [options]'
+    desc = 'Extract ATCG (ATCGmap) and CG (CGmap/bedgraph) profiles from bam file'
 
     parser = ArgumentParser(description=desc)
     parser.add_argument('-b', '--bam-file', dest='in_bam', help='an input .bam file', type=str, required=True)
     parser.add_argument('-g', '--reference-genome', dest='in_fa', help='genome reference file .fa with index (.fai) in the same path', type=str, required=True)
-    parser.add_argument('-a', '--output-atcgmap', dest='out_atcg', help='ATCGmap file', type=str, required=False, default='-')
-    parser.add_argument('-c', '--chr', dest='chr', help='chromosomes/contigs', type=str, default='all')
-    parser.add_argument('-s', '--start', dest='start', help='start coordinate of chromosomes/contigs', type=int, default=0)
-    parser.add_argument('-e', '--end', dest='end', help='end coordinate of chromosomes/contigs', type=int, default=math.inf)
+    parser.add_argument('--output-atcgmap', dest='out_atcg', help='output of ATCGmap file', type=str, required=False, default='')
+    parser.add_argument('--output-cgmap', dest='out_cg', help='output of CGmap file', type=str, required=False, default='')
+    parser.add_argument('--output-bed', dest='out_bed', help='output of bedgraph file', type=str, required=False, default='')
+    parser.add_argument('--chr', dest='chr', help='chromosomes/contigs', type=str, default='all')
+    parser.add_argument('--start', dest='start', help='start coordinate of chromosomes/contigs', type=int, default=0)
+    parser.add_argument('--end', dest='end', help='end coordinate of chromosomes/contigs', type=int, default=math.inf)
     parser.add_argument('--batch-size', dest='step', help='batch size of genomic intervals', type=int, default=2_000_000)
 
     parser.add_argument('--swap-strand', dest='swap_strand', help='swap read counts on two strands, true/false, or yes/no', type=as_bool, required=False, default='no')
@@ -292,9 +326,14 @@ if __name__ == '__main__':
 
     options = parser.parse_args()
 
+    # check params
+    assert sum(x == '-' for x in [options.out_atcg, options.out_cg, options.out_bed]) <= 1, 'can only set one output to stdout at most'
+
     params = Parameters(fafile=options.in_fa, 
                         bamfile=options.in_bam,
-                        out_atcg=options.out_atcg,
+                        out_atcg=options.out_atcg, # three types of outputs
+                        out_cg=options.out_cg,
+                        out_bed=options.out_bed,
                         chr=options.chr,  # 'all' for all chrs
                         start=options.start,
                         end=options.end,

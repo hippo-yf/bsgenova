@@ -674,19 +674,19 @@ if __name__ == '__main__':
 
     # parse command line
     
-    usage = 'Usage: BS-SNA-Caller.py -i sample.atcg.gz [options]'
-    desc = 'SNV caller with bisulite-converted sequencing data'
+    usage = 'Usage: bsgenova.py -i sample.ATCGmap.gz [options]'
+    desc = 'genotype/SNP calling from bisulite-sequencing data'
 
     parser = ArgumentParser(description=desc)
-    parser.add_argument('-i', '--atcg-file', dest='infile', help='an input .atcg[.gz] file, default: read from stdin', type=str, required=False, default="-")
-    parser.add_argument('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, say for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equilant to setting -o path/sample', type=str)
-    parser.add_argument('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type=float, default=0.001)
-    parser.add_argument('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type=float, default=0.03)
+    parser.add_argument('-i', '--atcg-file', dest='infile', help='an input .ATCGmap[.gz] file, default: read from stdin', type=str, required=False, default="-")
+    parser.add_argument('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, for example, for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equivalent to setting -o path/sample', type=str)
+    parser.add_argument('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base', type=float, default=0.001)
+    parser.add_argument('-e', '--error-rate', dest='error_rate', help='error rate a base is mis-detected due to sequencing or mapping', type=float, default=0.03)
     parser.add_argument('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type=float, default=0.6)
     parser.add_argument('-n', '--methy-ch', dest='methy_ncg', help='Cytosine methylation rate of non-CpG-context', type=float, default=0.01)
-    parser.add_argument('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than min DP will be skipped', type=int, default=10)
+    parser.add_argument('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than this value will be skipped', type=int, default=10)
     parser.add_argument('-p', '--pvalue', dest='pvalue', help='p-value threshold', type=float, default=0.01)
-    parser.add_argument('--shrink-depth', dest='shrink_depth', help='sites with coverage larger than this value will be shrinked by a square-root transform', type=int, default=60)
+    parser.add_argument('--shrink-depth', dest='shrink_depth', help='sites with coverage greater than this value will be shrinked by a square-root transform', type=int, default=60)
     parser.add_argument('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type=int, default=10000)
     parser.add_argument('-P', '--num-process', dest='num_process', help='number of processes in parallel', type=int, default=4)
     parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
