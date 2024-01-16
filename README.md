@@ -48,9 +48,11 @@ You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 
 ## Input
 
-a .ATCG file, returned by `bsseeker2/3` or `cgmaptools`
+an ATCGmap file, returned by `bsextractor`, or `bsseeker2/3` and `cgmaptools`
 
 ## Output
+
+The .snv file is equivalent to .vcf file.
 
 ### .snv file
 
