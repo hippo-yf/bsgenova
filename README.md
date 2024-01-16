@@ -1,12 +1,16 @@
-# BS-SNV-Caller
- 
-An **ultra-fast** and **accurate** Single-Nucleotide Variant (SNV) Caller with **bisulfite-converted** sequencing data for both single-cell and bulk samples.
+# bsgenova
 
-- Enable synergistic analysis of genetic and epigenetic questions using BS-seq, RRBS, WGBS data and so on.
+ = *bs-geno-nova* = *bs-genova*
 
-- Finish whole-genome SNV calling within an hour in a 4-core CPU and <1GB memory laptop
+An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-converted** sequencing data for both single-cell and bulk samples, such (sc)WGBS, (sc)RRBS.
 
-## Example
+- bsgenova is precise and sensitive
+- bsgenova is resistant against contaminative/low-quality data
+- bsgenova is fast, within ~3 hours with a 4 CPU cores for deep WGBS data
+- bsgenova is memory- and disk-efficient
+- use bsextractor to extract methylalation/whole-genome coverage from bam file
+
+## Examples
 
 `python bs-snv-caller.py -i data/example.atcg.gz -o output/example`
 
@@ -16,12 +20,13 @@ It will generate the results: `output/example.snv.gz` and `output/example.vcf.gz
 
 - python >= 3.8
 - numpy >= 1.13
+- pysam >= 1.18 (only for ***bsextrator***)
 
-Just git clone / download this repository, run in an environment with python3 and numpy.
+You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 
 ## Usage and parameters
 
-`python BS-SNV-Caller.py -i /path/to/atcgfile`
+`python bsgenova.py -i /path/to/ATCGmap-file`
 
 |**parameter** | **type** | **description**| **defaults** |
 |  ----  | ----  | ----  | ----  |
@@ -83,7 +88,7 @@ an example
 ```
 ##fileformat=VCFv4.4
 ##fileDate=20230717
-##source=BS-SNV-Caller
+##source=bsgenova
 ##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
 ##INFO=<ID=DPW,Number=1,Type=Integer,Description="Total Depth of Wastson Strand">
@@ -111,5 +116,8 @@ an example
 
 *BS-SNV-Caller* implementes parallelism with `multiprocessing`, the default number of processes is 4, at which the acceratation is about 3.8 times faster than single-process run.
 
-By maintaining a pool in memory, the maximum memory usage can be limited by parameter `--pool-upper-num`. The maxumun lines/sites is  `num-process` $\times$ `pool-upper-num` $\times$ `batch-size`. With defaults: `--pool-upper-num 30`, `--num-process 4`, and `--batch-size 10000`  the memory usage is <1GB.
+By maintaining a pool in memory, the maximum memory usage can be limited by parameter `--pool-upper-num`. The maxumun lines/sites is  `num-process` $\times$ `pool-upper-num` $\times$ `batch-size`. With defaults: `--pool-upper-num 30`, `--num-process 4`, and `--batch-size 10000`  the memory usage is ~1GB.
+
+# bsextractor
+
 
