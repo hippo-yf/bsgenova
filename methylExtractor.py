@@ -122,48 +122,6 @@ class Coverage(NamedTuple):
     watson: np.array
     crick: np.array
 
-# def reverse_read(read) -> bool:
-#     return read.is_reverse
-
-# def forward_read(read) -> bool:
-#     return not read.is_reverse
-
-def check_read(forward_read: bool):
-    def valid_read(read: pysam.AlignedSegment):
-        return (forward_read ^ read.is_reverse) and (not read.is_unmapped) and (not read.is_duplicate) and (not read.is_secondary) and (not read.is_qcfail) and (read.mapping_quality>=20)
-    return valid_read
-
-
-class MyAlignmentFile(pysam.AlignmentFile):
-
-    # def __init__(self, )
-
-    def Watson_Crick_coverage(self, intrv: GenomicInterval, 
-                              quality_threshold: int,
-                              swap_strand: bool
-                              ) -> Coverage:
-        cov_watson = self.count_coverage(contig=intrv.chr, 
-                                         start=intrv.start, 
-                                         stop=intrv.end, 
-                                         quality_threshold=quality_threshold,
-                                         read_callback=check_read(forward_read=True)
-                                         )
-        cov_crick = self.count_coverage(contig=intrv.chr, 
-                                         start=intrv.start, 
-                                         stop=intrv.end, 
-                                         quality_threshold=quality_threshold,
-                                         read_callback=check_read(forward_read=False)
-                                         )
-        
-        # in some bams, the read strandness seem be reversly flaged in `FLAG`
-        # parsed in read.is_reverse
-        # for example gemBS
-
-        if swap_strand:
-            return Coverage(crick=np.array(cov_watson), watson=np.array(cov_crick))
-        else:
-            return Coverage(watson=np.array(cov_watson), crick=np.array(cov_crick))
-
 
 class Parameters(NamedTuple):
     fafile: str
@@ -177,6 +135,49 @@ class Parameters(NamedTuple):
     context_size: int
     coordinate_base: int  # 0/1-based
     swap_strand: bool # swap the counts of forward and reverse strands
+    read_quality: int
+
+# def reverse_read(read) -> bool:
+#     return read.is_reverse
+
+# def forward_read(read) -> bool:
+#     return not read.is_reverse
+
+def check_read(forward_read: bool, read_quality: int):
+    def valid_read(read: pysam.AlignedSegment):
+        return (forward_read ^ read.is_reverse) and (not read.is_unmapped) and (not read.is_duplicate) and (not read.is_secondary) and (not read.is_qcfail) and (read.mapping_quality>=read_quality)
+    return valid_read
+
+
+class MyAlignmentFile(pysam.AlignmentFile):
+
+    # def __init__(self, )
+
+    def Watson_Crick_coverage(self, intrv: GenomicInterval, 
+                              params: Parameters
+                              ) -> Coverage:
+        cov_watson = self.count_coverage(contig=intrv.chr, 
+                                         start=intrv.start, 
+                                         stop=intrv.end, 
+                                         quality_threshold=params.quality_threshold,
+                                         read_callback=check_read(forward_read=True, read_quality=params.read_quality)
+                                         )
+        cov_crick = self.count_coverage(contig=intrv.chr, 
+                                         start=intrv.start, 
+                                         stop=intrv.end, 
+                                         quality_threshold=params.quality_threshold,
+                                         read_callback=check_read(forward_read=False, read_quality=params.read_quality)
+                                         )
+        
+        # in some bams, the read strandness seem be reversly flaged in `FLAG`
+        # parsed in read.is_reverse
+        # for example gemBS
+
+        if params.swap_strand:
+            return Coverage(crick=np.array(cov_watson), watson=np.array(cov_crick))
+        else:
+            return Coverage(watson=np.array(cov_watson), crick=np.array(cov_crick))
+
 
 
 def methylExtractor(params: Parameters) -> None:
@@ -279,34 +280,30 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--bam-file', dest='in_bam', help='an input .bam file', type=str, required=True)
     parser.add_argument('-g', '--reference-genome', dest='in_fa', help='genome reference file .fa with index (.fai) in the same path', type=str, required=True)
     parser.add_argument('-a', '--output-atcgmap', dest='out_atcg', help='ATCGmap file', type=str, required=False, default='-')
-    parser.add_argument('--swap-strand', dest='swap_strand', help='swap read counts on two strands, true/false, or yes/no', type=as_bool, required=False, default='no')
+    parser.add_argument('-c', '--chr', dest='chr', help='chromosomes/contigs', type=str, default='all')
+    parser.add_argument('-s', '--start', dest='start', help='start coordinate of chromosomes/contigs', type=int, default=0)
+    parser.add_argument('-e', '--end', dest='end', help='end coordinate of chromosomes/contigs', type=int, default=math.inf)
+    parser.add_argument('--batch-size', dest='step', help='batch size of genomic intervals', type=int, default=2_000_000)
 
-    # parser.add_argument('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base is different with reference base', type=float, default=0.001)
-    # parser.add_argument('-e', '--error-rate', dest='error_rate', help='error rate a base is misdetected due to sequencing or mapping', type=float, default=0.03)
-    # parser.add_argument('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type=float, default=0.6)
-    # parser.add_argument('-n', '--methy-ch', dest='methy_ncg', help='Cytosine methylation rate of non-CpG-context', type=float, default=0.01)
-    # parser.add_argument('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than min DP will be skipped', type=int, default=10)
-    # parser.add_argument('-p', '--pvalue', dest='pvalue', help='p-value threshold', type=float, default=0.01)
-    # parser.add_argument('--shrink-depth', dest='shrink_depth', help='sites with coverage larger than this value will be shrinked by a square-root transform', type=int, default=60)
-    # parser.add_argument('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type=int, default=10000)
-    # parser.add_argument('-P', '--num-process', dest='num_process', help='number of processes in parallel', type=int, default=4)
-    # parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
-    # parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type=int, default=30)
-    # parser.add_argument('--keep-order', dest='keep_order', help='keep the results same order with input, true/false, or yes/no', type=as_bool, default=True)
+    parser.add_argument('--swap-strand', dest='swap_strand', help='swap read counts on two strands, true/false, or yes/no', type=as_bool, required=False, default='no')
+    parser.add_argument('--base-quality', dest='base_quality', help='base sequencing quality threshold', type=int, default=15)
+    parser.add_argument('--read-quality', dest='read_quality', help='read mapping quality threshold', type=int, default=20)
+    parser.add_argument('--coordinate-base', dest='coordinate_base', help='0/1-based coordinate of output', type=int, default=1)
 
     options = parser.parse_args()
 
     params = Parameters(fafile=options.in_fa, 
                         bamfile=options.in_bam,
                         out_atcg=options.out_atcg,
-                        chr="all",  # 'all' for all chrs
-                        start=0,
-                        end=math.inf,
+                        chr=options.chr,  # 'all' for all chrs
+                        start=options.start,
+                        end=options.end,
                         # end=50_000_000,
-                        step=2_000_000,
-                        quality_threshold=15, # base seq quality
+                        step=options.step,
+                        quality_threshold=options.base_quality, # base seq quality
+                        read_quality=options.read_quality, # read mapping quality threshold
                         context_size=3, # size of CHG/...
-                        coordinate_base=0, # 0/1-based
+                        coordinate_base=options.coordinate_base, # 0/1-based
                         swap_strand=options.swap_strand  # swap counts of two strands
                         )
     methylExtractor(params)
