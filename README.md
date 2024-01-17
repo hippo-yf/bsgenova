@@ -32,6 +32,20 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 
 You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 
+## Performance
+
+### For autosomes
+
+![img](pic/fig2-ROC-chr-auto.svg)
+
+### For chromosome X
+
+![img](pic/fig3-ROC-chr-X.svg)
+
+## Resource usage
+
+<img src=pic/fig-resource-usage.svg width=60%>
+
 ## Parameters
 
 |**parameter** | **type** | **description**| **defaults** |
@@ -119,12 +133,6 @@ an example
 1	1024652	.	G	A	21	PASS	NS=1,DP=26,DPW=21,DPC=5,AF=0.50	GT:GQ:DP:DPW:DPC	0/1:21:26:21:5
 1	1024664	.	C	T	92	PASS	NS=1,DP=23,DPW=18,DPC=5,AF=0.74	GT:GQ:DP:DPW:DPC	0/1:3:23:18:5
 ```
-
-## Performance
-
-*BS-SNV-Caller* implementes parallelism with `multiprocessing`, the default number of processes is 4, at which the acceratation is about 3.8 times faster than single-process run.
-
-By maintaining a pool in memory, the maximum memory usage can be limited by parameter `--pool-upper-num`. The maxumun lines/sites is  `num-process` $\times$ `pool-upper-num` $\times$ `batch-size`. With defaults: `--pool-upper-num 30`, `--num-process 4`, and `--batch-size 10000`  the memory usage is ~1GB.
 
 # bsextractor
 
