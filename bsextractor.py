@@ -320,8 +320,8 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', dest='step', help='batch size of genomic intervals', type=int, default=2_000_000)
 
     parser.add_argument('--swap-strand', dest='swap_strand', help='swap read counts on two strands, true/false, or yes/no', type=as_bool, required=False, default='no')
-    parser.add_argument('--base-quality', dest='base_quality', help='base sequencing quality threshold', type=int, default=15)
-    parser.add_argument('--read-quality', dest='read_quality', help='read mapping quality threshold', type=int, default=20)
+    parser.add_argument('--base-quality', dest='base_quality', help='base sequencing quality threshold', type=int, default=0)
+    parser.add_argument('--read-quality', dest='read_quality', help='read mapping quality threshold', type=int, default=0)
     parser.add_argument('--coordinate-base', dest='coordinate_base', help='0/1-based coordinate of output', type=int, default=1)
 
     options = parser.parse_args()
