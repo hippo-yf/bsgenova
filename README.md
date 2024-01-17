@@ -32,9 +32,7 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 
 You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 
-## Usage and parameters
-
-`python bsgenova.py -i /path/to/ATCGmap-file`
+## Parameters
 
 |**parameter** | **type** | **description**| **defaults** |
 |  ----  | ----  | ----  | ----  |
@@ -130,4 +128,29 @@ By maintaining a pool in memory, the maximum memory usage can be limited by para
 
 # bsextractor
 
+## Parameters
+
+|**parameter** | **type** | **description**| **defaults** |
+|  ----  | ----  | ----  | ----  |
+|`-b/--bam-file`|`string`|an input .bam file|required|
+|`-g/--reference-genome`|`string`|genome reference file .fa with index (.fai) in the same path|required|
+|`--output-atcgmap`|`string`|output of ATCGmap file, `-`for `stdout`||
+|`--output-cgmap`|`string`|output of CGmap file, `-`for `stdout`|||
+|`--output-bed`|`string`|output of bedgraph file, `-`for `stdout`||
+|`--chr`|`string`|chromosomes/contigs|all|
+|`--start`|`integer`|start coordinate of chromosomes/contigs|0|
+|`--end`|`integer`|end coordinate of chromosomes/contigs|math.inf|
+|`--batch-size`|`integer`|batch size of genomic intervals|2_000_000|
+|`--swap-strand`|`logical`|swap read counts on two strands, true/false, or yes/no|no|
+|`--base-quality`|`integer`|base sequencing quality threshold|0|
+|`--read-quality`|`integer`|read mapping quality threshold|0|
+|`--coordinate-base`|`integer`|0/1-based coordinate of output|1|
+
+## Outputs
+
+Each of the following is optional
+
+- `ATCGmap` file, containing coverage information of all genomic sites
+- `CGmap` file, containing coverage information of C/G
+- `bedgraph` file, containing methylation levels of CG-context sites
 
