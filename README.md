@@ -162,3 +162,6 @@ Each of the following is optional
 - `CGmap` file, containing coverage information of C/G
 - `bedgraph` file, containing methylation levels of CG-context sites
 
+# Citation
+
+bsgenova: an accurate, robust, and fast genotype caller for bisulfite-sequencing data. under publish.
