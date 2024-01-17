@@ -6,19 +6,23 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 
 - bsgenova is precise and sensitive
 - bsgenova is resistant against contaminative/low-quality data
-- bsgenova is fast, within ~3 hours with a 4 CPU cores for deep WGBS data
+- bsgenova is fast, consuming ~3 hours with 4 CPU cores for deep WGBS sample
 - bsgenova is memory- and disk-efficient
 - use bsextractor to extract methylalation/whole-genome coverage from bam file
 
 ## Examples
 
-`python bs-snv-caller.py -i data/example.atcg.gz -o output/example`
+- call SNPs from ATCGmap file (with example data)  
+`python ./bsgenova.py -i data/example.atcg.gz -o output/example`
 
-`./bsgenova.py -i K562.ATCGmap.gz -P 1`
+- call SNPs from bam file  
+`python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap | python ./bsgenova.py`
 
-`./bsextractor.py -b K562.bam -g hg38.fa --output-atcgmap - --output-cgmap K562.CGmap.gz --output-bed K562.bed.gz --chr chr1 --start 1000000 --end 1100000 --swap-strand yes | ./bsgenova.py`
+- extrct ATCGmap, CGmap, and bed files from bam file  
+`python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap sample.ATCGmap.gz --output-cgmap sample.CGmap.gz --output-bed sample.bed.gz`
 
-It will generate the results: `output/example.snv.gz` and `output/example.vcf.gz`
+- extrct ATCGmapfiles of a subset of genome  
+`python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap sample.ATCGmap.gz --chr chr1 --start 1000000 --end 1100000`
 
 ## Installation and dependencies
 
