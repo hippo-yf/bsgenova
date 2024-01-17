@@ -133,7 +133,7 @@ By maintaining a pool in memory, the maximum memory usage can be limited by para
 |**parameter** | **type** | **description**| **defaults** |
 |  ----  | ----  | ----  | ----  |
 |`-b/--bam-file`|`string`|an input .bam file|required|
-|`-g/--reference-genome`|`string`|genome reference file .fa with index (.fai) in the same path|required|
+|`-g/--reference-genome`|`string`|genome reference .fa file with index (.fai) in the same path|required|
 |`--output-atcgmap`|`string`|output of ATCGmap file, `-`for `stdout`||
 |`--output-cgmap`|`string`|output of CGmap file, `-`for `stdout`|||
 |`--output-bed`|`string`|output of bedgraph file, `-`for `stdout`||

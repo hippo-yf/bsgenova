@@ -310,7 +310,7 @@ if __name__ == '__main__':
 
     parser = ArgumentParser(description=desc)
     parser.add_argument('-b', '--bam-file', dest='in_bam', help='an input .bam file', type=str, required=True)
-    parser.add_argument('-g', '--reference-genome', dest='in_fa', help='genome reference file .fa with index (.fai) in the same path', type=str, required=True)
+    parser.add_argument('-g', '--reference-genome', dest='in_fa', help='genome reference .fa file with index (.fai) in the same path', type=str, required=True)
     parser.add_argument('--output-atcgmap', dest='out_atcg', help='output of ATCGmap file', type=str, required=False, default='')
     parser.add_argument('--output-cgmap', dest='out_cg', help='output of CGmap file', type=str, required=False, default='')
     parser.add_argument('--output-bed', dest='out_bed', help='output of bedgraph file', type=str, required=False, default='')
