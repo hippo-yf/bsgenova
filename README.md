@@ -21,7 +21,7 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 - extrct ATCGmap, CGmap, and bed files from bam file  
 `python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap sample.ATCGmap.gz --output-cgmap sample.CGmap.gz --output-bed sample.bed.gz`
 
-- extrct ATCGmap files for a subset of genome  
+- extrct ATCGmap file for a subset of genome  
 `python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap sample.ATCGmap.gz --chr chr1 --start 1000000 --end 1100000`
 
 ## Installation and dependencies
