@@ -106,7 +106,7 @@ class MyFastaFile(pysam.FastaFile):
 
         bases = self.fetch(reference=intrv.chr, 
                            start=max(0, intrv.start-padding), 
-                           end=max(intrv.chr_length, intrv.end+padding)
+                           end=min(intrv.chr_length, intrv.end+padding)
                            ).upper()
         
         # padding N
