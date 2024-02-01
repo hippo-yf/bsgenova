@@ -22,7 +22,7 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 `python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap sample.ATCGmap.gz --output-cgmap sample.CGmap.gz --output-bed sample.bed.gz`
 
 - extrct ATCGmap file for a subset of genome  
-`python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap sample.ATCGmap.gz --chr chr1 --start 1000000 --end 1100000`
+`python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap sample.ATCGmap.gz --chr chr1,chr22 --start 1000000 --end 1100000`
 
 ## Installation and dependencies
 
@@ -145,7 +145,7 @@ an example
 |`--output-atcgmap`|`string`|output of ATCGmap file, `-`for `stdout`||
 |`--output-cgmap`|`string`|output of CGmap file, `-`for `stdout`|||
 |`--output-bed`|`string`|output of bedgraph file, `-`for `stdout`||
-|`--chr`|`string`|chromosomes/contigs|all|
+|`--chr`|`string`|chromosomes/contigs, use `,` to seperate, ie `chr1,chr2`|all|
 |`--start`|`integer`|start coordinate of chromosomes/contigs|0|
 |`--end`|`integer`|end coordinate of chromosomes/contigs|math.inf|
 |`--batch-size`|`integer`|batch size of genomic intervals|2_000_000|

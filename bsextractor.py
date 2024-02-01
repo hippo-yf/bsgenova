@@ -68,9 +68,9 @@ class GenomicIntervalGenerator:
         self.chrs = fa.references
         self.lens = fa.lengths
         if chrs == "all":
-            self.chrs_selected = self.chrs
+            self.chrs_selected = list(self.chrs)
         else:
-            self.chrs_selected = chrs
+            self.chrs_selected = chrs.split(",")
         
         self.start = start
         self.end = end
