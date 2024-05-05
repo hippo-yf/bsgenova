@@ -28,7 +28,7 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 
 - python >= 3.8
 - numpy >= 1.13
-- pysam >= 1.18 (only for ***bsextrator***)
+- pysam >= 1.18 (only for ***bsextractor***)
 
 You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 
@@ -51,13 +51,13 @@ You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 |**parameter** | **type** | **description**| **defaults** |
 |  ----  | ----  | ----  | ----  |
 | `-i`, `--atcg-file` | `string` | an input `.atcg[.gz]` file||
-| `-o`, `--output-prefix` | `string` | prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, say for input of path/sample.atcg.gz, the output is `path/sample`.snv.gz and path/sample.vcf.gz which is equilant to setting -o `path/sample` | prefix of input file, this program will not create directoy automatically|
-|`-m`, `--mutation-rate`| `float` | mutation rate a hyploid base is different with reference base |0.001 |
+| `-o`, `--output-prefix` | `string` | prefix of output files, `prefix.snv.gz` and `prefix.vcf.gz` will be created with the same name with input file except suffix by default. For example, for input `path/sample.atcg.gz`, the output is `path/sample.snv.gz` and `path/sample.vcf.gz`. It is equilant to set `-o path/sample` | prefix of output files; bsgenova will not create directoy automatically |
+|`-m`, `--mutation-rate`| `float` | mutation rate that a hyploid base is different with reference base |0.001 |
 |`-e`, `--error-rate` | `float` |error rate a base is misdetected due to sequencing or mapping | 0.03|
 |`-c`, `--methy-cg` |`float` | Cytosine methylation rate of CpG-context | 0.6|
 |`-n`, `--methy-ch` |`float` |Cytosine methylation rate of non-CpG-context | 0.01|
-|`-d`, `--min-depth` |`float` | sites with coverage depth less than min DP will be skipped | 10|
-|`-p`, `--pvalue` |`float` | *p*-value threshold |0.01|
+|`-d`, `--min-depth` |`float` | sites with coverage depth less than minimal depth will be skipped | 10|
+|`-p`, `--pvalue` |`float` | *p*-value threshold (the *p*-value is actually posterior probability) |0.01|
 |`--shrink-depth` |`integer` | sites with coverage larger than this value will be shrinked by a square-root transform | 60|
 |`--batch-size` |`integer` | a batch of genomic sites will be processed at the same time |10000|
 |`-P`, `--num-process` |`integer` | number of processes in parallel |4|
@@ -66,9 +66,37 @@ You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 |`--keep-order` |`logical` | keep the results same order with input, if the order of sites makes no difference, set `False` to enable faster non-blocking asynchronous IO, True/False or Yes/No, case insensitive | True|
 |`-h`, `--help` | | show this help message and exit ||
 
+## Parameter selection
+
+- `-m`, `--mutation-rate`, mutation rate that a hyploid base is different with reference base. The genome-wide mutation rate of normal organism is about 0.001. For samples with abnormal genome, it can be set larger.
+- `-e`, `--error-rate`, error rate a base is misdetected due to sequencing or mapping. The error rate for bisulfite sequencing samples is usually 1% ~ 5%. If the data is lower quality for some reasons, set it larger to avoid false positives.
+- `-c`, `--methy-cg` and `-n`, `--methy-ch`, Cytosine methylation rates of CpG-context and non-CpG-context cytosines,re, respectively. The cytosines methylation levels are the **observed values from sequencing samples witout any correction**, such as incomplete and over coversion. For mammal genomes of body cells, it is usually 60% ~ 80% and 1% ~ 5%, respectively. For sperms, it is larger; for oocytes, it is lower; for embryoes and plants, there are significant methylation level of non-CpG cytosines.
+- `-d`, `--min-depth`, sites with coverage depth less than minimal depth will be skipped. 10 convertionally. For samples of less sequences depth, it can be set lower say 6.
+- `-p`, `--pvalue`, *p*-value threshold (the *p*-value is actually posterior probability). For samples sequenced deeply, it can be set smaller, say 0.001, otherwise, set it larger, say 0.01, 0.05, by default 0.01.
+
+
 ## Input
 
 an ATCGmap file, returned by `bsextractor`, or `bsseeker2/3` and `cgmaptools`
+
+|**column** | description|
+|  ----  | ----  |
+|1-3| chromosome, reference base, position|
+|4-5| CpG context, two-nucleotide context|
+|6-10| read counts of ATCGN mapped on Watson strand|
+|11-15| read counts of ATCGN mapped on Crick strand|
+|16| methylation level |
+
+an example
+
+```
+chr1	C	10467	CG	CG	0	1	0	0	0	1	0	68	0	0	0.00
+chr1	G	10468	CG	CG	0	1	0	0	0	0	33	0	0	0	nan
+chr1	C	10469	CG	CG	0	0	0	1	0	0	0	18	0	0	nan	
+chr1	G	10470	CG	CG	0	0	0	1	0	18	0	0	8	0	0.31
+chr1	G	10471	CHG	CC	0	0	1	0	0	0	0	38	0	0	nan
+chr1	T	10472	--	--	0	0	0	1	0	1	0	2	8	0	nan
+```
 
 ## Output
 
