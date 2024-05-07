@@ -52,7 +52,7 @@ You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 |  ----  | ----  | ----  | ----  |
 | `-i`, `--atcg-file` | `string` | an input `.atcg[.gz]` file||
 | `-o`, `--output-prefix` | `string` | prefix of output files, for input `path/sample.atcg.gz`, the output is `path/sample.snv.gz` and `path/sample.vcf.gz`, equivalant to set `-o path/sample` | prefix of output files; bsgenova will not create directoy automatically |
-|`-m`, `--mutation-rate`| `float` | mutation rate that a hyploid base is different with reference base |0.001 |
+|`-m`, `--mutation-rate`| `float` | mutation rate that a haploid base is different with reference base |0.001 |
 |`-e`, `--error-rate` | `float` |error rate a base is misdetected due to sequencing or mapping | 0.03|
 |`-c`, `--methy-cg` |`float` | Cytosine methylation rate of CpG-context | 0.6|
 |`-n`, `--methy-ch` |`float` |Cytosine methylation rate of non-CpG-context | 0.01|
@@ -68,11 +68,12 @@ You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 
 ## Parameter selection
 
-- `-m`, `--mutation-rate`, mutation rate that a hyploid base is different with reference base. The genome-wide mutation rate of normal organism is about 0.001. For samples with abnormal genome, it can be set larger.
-- `-e`, `--error-rate`, error rate a base is misdetected due to sequencing or mapping. The error rate for bisulfite sequencing samples is usually 1% ~ 5%. If the data is lower quality for some reasons, set it larger to avoid false positives.
-- `-c`, `--methy-cg` and `-n`, `--methy-ch`, Cytosine methylation rates of CpG-context and non-CpG-context cytosines,re, respectively. The cytosines methylation levels are the **observed values from sequencing samples witout any correction**, such as incomplete and over coversion. For mammal genomes of body cells, it is usually 60% ~ 80% and 1% ~ 5%, respectively. For sperms, it is larger; for oocytes, it is lower; for embryoes and plants, there are significant methylation level of non-CpG cytosines.
-- `-d`, `--min-depth`, sites with coverage depth less than minimal depth will be skipped. 10 convertionally. For samples of less sequences depth, it can be set lower say 6.
-- `-p`, `--pvalue`, *p*-value threshold (the *p*-value is actually posterior probability). For samples sequenced deeply, it can be set smaller, say 0.001, otherwise, set it larger, say 0.01, 0.05, by default 0.01.
+- `-m`, `--mutation-rate`, mutation rate that a haploid base is different with reference base. The genome-wide mutation rate of normal organism is about 0.001. For samples with abnormal genome, it can be set larger.
+- `-e`, `--error-rate`, error rate a base is mis-detected due to sequencing or mapping. The error rate for bisulfite sequencing samples is usually 1% ~ 5%. If the data is of lower quality for some reasons, set it larger to avoid false positives.
+- `-c`, `--methy-cg` and `-n`, `--methy-ch`, Cytosine methylation rates of CpG-context and non-CpG-context cytosines, respectively. The cytosines methylation levels are the **observed values from sequencing samples without any correction**, such as incomplete and over conversion. For mammal genomes of body cells, it is usually 60% ~ 80% and 1% ~ 5%, respectively. For sperms, the genome is hyper-methylated; for oocytes, the genome is hypo-methylated; for embryos and plants, there are significant methylation of non-CpG cytosines.
+- `-d`, `--min-depth`, sites with coverage depth less than minimal depth will be skipped. 10 conventionally. For samples with less sequencing depth, it can be set lower say 6.
+- `-p`, `--pvalue`, *p*-value threshold (the *p*-value is actually posterior probability). For samples sequenced deeply, it can be set smaller, say 0.001 or smaller, otherwise, set it larger, say 0.01, 0.05, by default 0.01.
+
 
 
 ## Input
@@ -86,6 +87,8 @@ an ATCGmap file, returned by `bsextractor`, or `bsseeker2/3` and `cgmaptools`
 |6-10| read counts of ATCGN mapped on Watson strand|
 |11-15| read counts of ATCGN mapped on Crick strand|
 |16| methylation level |
+
+The columns 5, 10, 15, and 16 are not used in bsgenova thus can be arbitrarily filled.
 
 an example
 
