@@ -74,8 +74,6 @@ You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 - `-d`, `--min-depth`, sites with coverage depth less than minimal depth will be skipped. 10 conventionally. For samples with less sequencing depth, it can be set lower say 6.
 - `-p`, `--pvalue`, *p*-value threshold (the *p*-value is actually posterior probability). For samples sequenced deeply, it can be set smaller, say 0.001 or smaller, otherwise, set it larger, say 0.01, 0.05, by default 0.01.
 
-
-
 ## Input
 
 an ATCGmap file, returned by `bsextractor`, or `bsseeker2/3` and `cgmaptools`
