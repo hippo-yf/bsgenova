@@ -76,7 +76,7 @@ You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 
 ## Input
 
-an ATCGmap file, returned by `bsextractor`, or `bsseeker2/3` and `cgmaptools`
+an `ATCGmap` file, extracted by `bsextractor`, `bsseeker2/3` or `cgmaptools` from alignment `bam` file
 
 |**column** | description|
 |  ----  | ----  |
