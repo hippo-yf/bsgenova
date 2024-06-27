@@ -193,4 +193,5 @@ Each of the following is optional
 
 # Citation
 
-bsgenova: an accurate, robust, and fast genotype caller for bisulfite-sequencing data. under publish.
+Feng Y, Gao F. **bsgenova: an accurate, robust, and fast genotype caller for bisulfite-sequencing data.** *BMC Bioinformatics*. 2024;25(1):206. Published 2024 Jun 5. doi:10.1186/s12859-024-05821-7
+
