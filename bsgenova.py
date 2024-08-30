@@ -181,7 +181,7 @@ class SNVparams:
             '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">\n',
             '##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Wastson Strand">\n',
             '##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">\n',
-            f'#CHROM\tPOS\tID\tREF\tALT\t\tQUAL\tFILTER\tINFO\tFORMAT\t{self.sampleID}\n'
+            f'#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t{self.sampleID}\n'
             ]
 
     def set_model_params(self):

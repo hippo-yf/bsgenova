@@ -150,7 +150,7 @@ an example
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
 ##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Wastson Strand">
 ##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">
-#CHROM	POS	ID	REF	ALT		QUAL	FILTER	INFO	FORMAT	example
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	example
 1	1023917	.	G	C	263	PASS	NS=1,DP=33,DPW=20,DPC=13,AF=0.50	GT:GQ:DP:DPW:DPC	0/1:130:33:20:13
 1	1023921	.	C	G	512	PASS	NS=1,DP=33,DPW=20,DPC=13,AF=1.00	GT:GQ:DP:DPW:DPC	1:26:33:20:13
 1	1024083	.	A	G	158	PASS	NS=1,DP=18,DPW=10,DPC=8,AF=0.91	GT:GQ:DP:DPW:DPC	1:8:18:10:8
