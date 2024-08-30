@@ -68,7 +68,7 @@ class SNVparams:
         pr_cg = self.methy_cg
         pr_ncg = self.methy_ncg
 
-        # Wastson strand
+        # Watson strand
 
         self.P_AWs = {'CG': np.append(self.transA(pr_cg), zeros4), 
                 'CH': np.append(self.transA(pr_ncg), zeros4)}
@@ -179,7 +179,7 @@ class SNVparams:
             '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n',
             '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the alternative variant. So, we express the GQ as the Phred score (-10*log10 (p-value)) of posterior probability of homozygote/heterozygote, namely, Prob(heterozygote) for homozygous sites and Prob(homozygote) for heterozygous sites. This is somewhat different with SNV calling from WGS data.">\n',
             '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">\n',
-            '##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Wastson Strand">\n',
+            '##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">\n',
             '##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">\n',
             f'#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t{self.sampleID}\n'
             ]
