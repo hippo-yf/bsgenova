@@ -140,14 +140,14 @@ an example
 ##fileformat=VCFv4.4
 ##fileDate=20230717
 ##source=bsgenova
-##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples With Data">
-##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Depth">
-##INFO=<ID=DPW,Number=1,Type=Integer,Description="Total Depth of Wastson Strand">
-##INFO=<ID=DPC,Number=1,Type=Integer,Description="Total Depth of Crick Strand">
+##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples">
+##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">
+##INFO=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">
+##INFO=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">
 ##FILTER=<ID=q30,Description="Quality < 30">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 ##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the alternative variant. So, we express the GQ as the Phred score (-10log10 (p-value)) of posterior probability of homozygote/heterozygote, namely, Prob(heterozygote) for homozygous sites and Prob(homozygote) for heterozygous sites. This is somewhat different with SNV calling from WGS data.">
-##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read Depth">
+##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">
 ##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Wastson Strand">
 ##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	example
