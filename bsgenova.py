@@ -477,7 +477,7 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
 
     # probability of homozygote/heterozygote
     p_homozyte = np.sum(sig_post[:, :4], axis=1)
-    p_heterzyte = np.sum(sig_post[:, 5:], axis=1)
+    p_heterzyte = np.sum(sig_post[:, 4:], axis=1)
 
     # max posterior probability
     # sure of certain genotype or not
