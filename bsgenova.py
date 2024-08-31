@@ -20,11 +20,19 @@ from argparse import Namespace
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s')
 
+def phredScore(x):
+    # max score of 999
+    # MAX_PHRED_SCORE = 2**10
+    MAX_PHRED_SCORE = 999
+    EPS = 10**(-MAX_PHRED_SCORE/10)
+    phred = np.fmin(MAX_PHRED_SCORE, np.int32(np.around(-10*np.log10(np.fmax(EPS, x)))))
+    return phred
 
 class SNVparams:
     def __init__(self, args: Namespace):
         self.infile = args.infile
         self.outprefix = args.outprefix
+        self.sampleID = args.sampleID
         self.mutation_rate = args.mutation_rate/3
         self.error_rate = args.error_rate/3
         # total mismatch rate
@@ -32,7 +40,6 @@ class SNVparams:
         self.methy_cg = args.methy_cg
         self.methy_ncg = args.methy_ncg
         self.min_depth = args.min_depth
-
         
         self.pvalue = args.pvalue
         self.shrink_depth = args.shrink_depth
@@ -150,34 +157,40 @@ class SNVparams:
             dtype='float32').reshape(4, 10)
 
     def set_out_files(self):
+        # set default sample name
 
-        # set default sampel name
-        if self.outprefix is None or self.outprefix == "":
-            dir = os.path.dirname(self.infile)
-            filename = os.path.basename(self.infile)
-            fn = re.split(r'\.', filename)[0]
-            self.sampleID = fn # sample name
-            self.outprefix = os.path.join(dir, fn)
-        else:
-            fn = re.split(r'/', self.outprefix)[-1]
-            self.sampleID = fn # sample name
+        # if self.outprefix is None or self.outprefix == "":
+        if self.outprefix == '-':
+            if self.infile == '-':
+                print('os.error')
+                sys.exit("Must specify \"--output-prefix\" when reading from stdin!")
+            else:
+                # dir = os.path.dirname(self.infile)
+                filename = os.path.basename(self.infile)
+                fn = re.split(r'\.', filename)[0]
+                if self.sampleID == '-':
+                    self.sampleID = fn # sample name
+                self.outprefix = os.path.join('./', fn) # the current dir by default
+        elif self.sampleID == '-':
+            self.sampleID = os.path.basename(self.outprefix) # sample name        
 
         self.out_snv = self.outprefix + ".snv.gz"
         self.out_vcf = self.outprefix + ".vcf.gz"
-
-                
+        
         ## vcf header
         self.VCF_HEADER = [
             '##fileformat=VCFv4.4\n',
-            f'##fileDate=%s\n' % time.strftime("%Y%m%d", time.localtime()),
-            '##source=bsgenova\n',
-            '##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples">\n',
+            f'##fileDate=%s\n' % time.strftime("%Y%m%d-%H:%M:%S", time.localtime()),
+            f'##source={" ".join(sys.argv)}\n',
+            '##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples with Data">\n',
             '##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">\n',
             '##INFO=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">\n',
             '##INFO=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">\n',
-            '##FILTER=<ID=q30,Description="Quality < 30">\n',
+            '##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">\n',
+            '##FILTER=<ID=q30,Description="Quality<30">\n',
             '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n',
-            '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the alternative variant. So, we express the GQ as the Phred score (-10*log10 (p-value)) of posterior probability of homozygote/heterozygote, namely, Prob(heterozygote) for homozygous sites and Prob(homozygote) for heterozygous sites. This is somewhat different with SNV calling from WGS data.">\n',
+            '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality. the Phred score -10*log10 (1 -  max posterior probability). If you do not want ambiguous results, filter sites with low GQ values.">\n',
+            '##FORMAT=<ID=GQH,Number=1,Type=Integer,Description="Genotype Quality of homozygote/heterozygote.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the genotype. So, we express the GQH as the Phred score -10*log10 (1 - posterior probability of homozygote/heterozygote), to indicate the quality of homozygote/heterozygote. This is somewhat different with SNV calling from WGS data.">\n',
             '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">\n',
             '##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">\n',
             '##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">\n',
@@ -451,18 +464,25 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
     chrs = array[i_sig, 0]
     poss = array[i_sig, 2]
     reffs = refs[i_sig]
-
+    
+    # post prop of sig sites
+    sig_post = post_mx[i_sig, :]
     # allele frequencies
-    allele_freq = post_mx[i_sig,:] @ params.allele_weights.T
+    allele_freq = sig_post @ params.allele_weights.T
 
     # strand coverage
     DP_watson = np.sum(reads[i_sig, :4], axis=1)
     DP_crick = np.sum(reads[i_sig, 4:8], axis=1)
     depths = depth[i_sig]
 
-    # probability of homozygote
-    p_homozyte = np.sum(post_mx[i_sig, :4], axis=1)
+    # probability of homozygote/heterozygote
+    p_homozyte = np.sum(sig_post[:, :4], axis=1)
+    p_heterzyte = np.sum(sig_post[:, 5:], axis=1)
 
+    # max posterior probability
+    # sure of certain genotype or not
+    max_prop = np.max(sig_post, axis=1)
+    k_max_post = np.argmax(sig_post, axis=1)
 
     # # .snv format output
     # res_snv = format_snv(chrs, poss, reffs, p_values, p_homozyte, allele_freq, DP_watson, DP_crick)
@@ -475,9 +495,10 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
 
     res_snv = []
     for i in range(n_sig):
-        res_snv.append('%s\t%s\t%s\t%.2e\t%.2e\t%.2e\t%.2e\t%.2e\t%.2e\t%d\t%d\n' % (
+        res_snv.append('%s\t%s\t%s\t%.2e\t%.2e\t%.2e\t%.2e\t%.2e\t%.2e\t%.2e\t%.2e\t%d\t%d\n' % (
         chrs[i], poss[i], reffs[i],
-        p_values[i], p_homozyte[i],
+        p_values[i], max_prop[i], 
+        p_homozyte[i], p_heterzyte[i],
         allele_freq[i,0], allele_freq[i,1], allele_freq[i,2], allele_freq[i,3],
         DP_watson[i], DP_crick[i]
         ))
@@ -486,23 +507,21 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
 
     # BASES_dict = {'A':0, 'T':1, 'C':2, 'G':3}
 
-    # max score of 1024
-    MAX_PHRED_SCORE = 2**10
-    EPS = 10**(-MAX_PHRED_SCORE/10)
-
-    vcf_QUAL = np.fmin(MAX_PHRED_SCORE, np.int32(np.around(-10*np.log10(np.fmax(EPS, p_values)))))
+    # vcf_QUAL = np.fmin(MAX_PHRED_SCORE, np.int32(np.around(-10*np.log10(np.fmax(EPS, p_values)))))
+    vcf_QUAL = phredScore(p_values)
 
     res_vcf = []
     for i in range(n_sig):
         # except the ref
         a = BASES == reffs[i]
         # alt = np.logical_and([True]*4, ~a)
-        alt = ~a
+        alt = np.logical_not(a)
         order = np.argsort(-allele_freq[i, alt])
         BASES_ord = BASES[alt][order]
         PROP_ALELLE = allele_freq[i, alt][order]
 
         vcf_ID = '.'
+
         # if p_homozyte[i] < 0.8:
         b = PROP_ALELLE > 0.05
         if b.sum() == 0:
@@ -517,35 +536,38 @@ def BS_SNV_Caller_batch(lines: list, params: SNVparams):
 
         # allele frequency
         vcf_af = ','.join(['%.3f' % x for x in PROP_ALELLE[b]])
-        vcf_INFO = f'NS=1,DP={depths[i]},DPW={DP_watson[i]},DPC={DP_crick[i]}'
+        vcf_INFO = f'NS=1;DP={depths[i]};DPW={DP_watson[i]};DPC={DP_crick[i]}'
         if b.sum() != 0:
-            vcf_INFO += f',AF={vcf_af}'
+            vcf_INFO += f';AF={vcf_af}'
 
-        vcf_FORMAT = 'GT:GQ:DP:DPW:DPC'
+        vcf_FORMAT = 'GT:GQ:GQH:DP:DPW:DPC'
         
         # score of homozygote
-
-        vcf_QUAL_HM = np.fmin(MAX_PHRED_SCORE, np.int32(np.around(-10*np.log10(np.fmax(EPS, 1-p_homozyte)))))
+        vcf_QUAL_HM = phredScore(p_heterzyte)
         # score of heterzygote
-        vcf_QUAL_HT = np.fmin(MAX_PHRED_SCORE, np.int32(np.around(-10*np.log10(np.fmax(EPS, p_homozyte)))))
+        vcf_QUAL_HT = phredScore(p_homozyte)
+        vcf_GQH = np.fmax(vcf_QUAL_HM, vcf_QUAL, vcf_QUAL_HT)
+
+        # quality of certain genotype with max post prop
+        vcf_GQ = phredScore(np.delete(sig_post[i,:], k_max_post[i]).sum())
 
         # genotype 
         if p_homozyte[i] > 0.5:
-            vcf_GQ = vcf_QUAL_HM[i]
+            # vcf_GQH = vcf_QUAL_HM[i]
             if allele_freq[i, a] > PROP_ALELLE[0]:
-                vcf_GT = '0'
-                vcf_ALT = '.'
+                vcf_GT = '0/0'
+                # vcf_ALT = '.'
             else:
-                vcf_GT = '1'
-                vcf_ALT = BASES_ord[0]
+                vcf_GT = '1/1'
+                # vcf_ALT = BASES_ord[0]
         else:
-            vcf_GQ = vcf_QUAL_HT[i]
+            # vcf_GQH = vcf_QUAL_HT[i]
             if allele_freq[i, a] > PROP_ALELLE[1]:
                 vcf_GT = '0/1'
             else:
                 vcf_GT = '1/2'
 
-        vcf_SAMPLE = f'{vcf_GT}:{vcf_GQ}:{depths[i]}:{DP_watson[i]}:{DP_crick[i]}'
+        vcf_SAMPLE = f'{vcf_GT}:{vcf_GQ}:{vcf_GQH[i]}:{depths[i]}:{DP_watson[i]}:{DP_crick[i]}'
 
         res_vcf.append(f'{chrs[i]}\t{poss[i]}\t{vcf_ID}\t{reffs[i]}\t{vcf_ALT}\t{vcf_QUAL[i]}\t{vcf_FILTER}\t{vcf_INFO}\t{vcf_FORMAT}\t{vcf_SAMPLE}\n')
 
@@ -679,11 +701,12 @@ if __name__ == '__main__':
 
     parser = ArgumentParser(description=desc)
     parser.add_argument('-i', '--atcg-file', dest='infile', help='an input .ATCGmap[.gz] file, default: read from stdin', type=str, required=False, default="-")
-    parser.add_argument('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, for example, for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equivalent to setting -o path/sample', type=str)
-    parser.add_argument('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate a hyploid base', type=float, default=0.001)
-    parser.add_argument('-e', '--error-rate', dest='error_rate', help='error rate a base is mis-detected due to sequencing or mapping', type=float, default=0.03)
-    parser.add_argument('-c', '--methy-cg', dest='methy_cg', help='Cytosine methylation rate of CpG-context', type=float, default=0.6)
-    parser.add_argument('-n', '--methy-ch', dest='methy_ncg', help='Cytosine methylation rate of non-CpG-context', type=float, default=0.01)
+    parser.add_argument('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, for example, for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equivalent to setting -o path/sample', type=str, required=False, default='-')
+    parser.add_argument('--sample-name', dest='sampleID', help='the sample name used in vcf file. by default, use the basename of output specified by --output-prefix', type=str, required=False, default='-')
+    parser.add_argument('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate of a hyploid base', type=float, default=0.001)
+    parser.add_argument('-e', '--error-rate', dest='error_rate', help='error rate that a base is mis-detected due to sequencing or mapping', type=float, default=0.03)
+    parser.add_argument('-c', '--methy-cg', dest='methy_cg', help=' methylation rate of CpG-context cytosines', type=float, default=0.6)
+    parser.add_argument('-n', '--methy-ch', dest='methy_ncg', help='methylation rate of non-CpG-context cytosines', type=float, default=0.01)
     parser.add_argument('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than this value will be skipped', type=int, default=10)
     parser.add_argument('-p', '--pvalue', dest='pvalue', help='p-value threshold', type=float, default=0.01)
     parser.add_argument('--shrink-depth', dest='shrink_depth', help='sites with coverage greater than this value will be shrinked by a square-root transform', type=int, default=60)
@@ -692,6 +715,9 @@ if __name__ == '__main__':
     parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
     parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type=int, default=30)
     parser.add_argument('--keep-order', dest='keep_order', help='keep the results same order with input, true/false, or yes/no', type=as_bool, default=True)
+
+    print(sys.argv)
+    print(' '.join(sys.argv))
 
     options = parser.parse_args()
 

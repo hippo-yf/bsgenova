@@ -52,6 +52,7 @@ You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 |  ----  | ----  | ----  | ----  |
 | `-i`, `--atcg-file` | `string` | an input `.atcg[.gz]` file||
 | `-o`, `--output-prefix` | `string` | prefix of output files, for input `path/sample.atcg.gz`, the output is `path/sample.snv.gz` and `path/sample.vcf.gz`, equivalant to set `-o path/sample` | prefix of output files; bsgenova will not create directoy automatically |
+|`--sample-name`|`string`|the sample name used in vcf file. by default, use the basename of output specified by --output-prefix|
 |`-m`, `--mutation-rate`| `float` | mutation rate that a haploid base is different with reference base |0.001 |
 |`-e`, `--error-rate` | `float` |error rate a base is misdetected due to sequencing or mapping | 0.03|
 |`-c`, `--methy-cg` |`float` | Cytosine methylation rate of CpG-context | 0.6|
@@ -111,23 +112,20 @@ The .snv file is equivalent to .vcf file.
 |2| position|
 |3| reference base|
 |4| posterior probability of not a SNV (different from reference)|
-|5| posterior probability of a homozygote |
-|6-9| posterior allele frequencies of A,T,C, and G respectively |
-|10-11| coverage depths of Watson and Crick strands respectively|
+|5| max posterior probability|
+|6-7| posterior probability of a homozygote/heterzygote  |
+|8-11| posterior allele frequencies of A,T,C, and G, respectively |
+|12-13| coverage depths of Watson and Crick strands, respectively|
 
 an example
 
 ```
-1	1023917	G	4.56e-27	9.98e-14	1.88e-20	6.71e-09	5.00e-01	5.00e-01	20	13
-1	1023921	C	3.26e-53	9.97e-01	1.32e-03	9.31e-09	7.28e-07	9.99e-01	20	13
-1	1024083	A	1.43e-16	8.29e-01	8.56e-02	3.86e-06	3.86e-06	9.14e-01	10	8
-1	1024085	C	2.30e-09	1.00e-04	4.59e-10	5.00e-01	5.00e-01	4.59e-10	12	8
-1	1024093	C	1.79e-18	1.26e-10	5.00e-01	1.99e-06	5.00e-01	4.72e-14	13	8
-1	1024131	C	8.62e-06	7.54e-02	8.84e-08	5.38e-01	4.62e-01	8.84e-08	15	4
-1	1024399	G	2.80e-32	9.99e-01	1.00e+00	7.61e-08	7.61e-08	4.33e-04	18	5
-1	1024462	A	3.17e-36	1.00e+00	1.10e-04	4.97e-09	4.97e-09	1.00e+00	20	7
-1	1024652	G	8.20e-03	8.20e-03	4.96e-01	5.53e-11	5.53e-11	5.04e-01	21	5
-1	1024664	C	5.64e-10	4.81e-01	7.25e-08	7.40e-01	2.60e-01	7.25e-08	18	5
+1	1023917	G	4.56e-27	1.00e+00	9.98e-14	1.00e+00	1.88e-20	6.71e-09	5.00e-01	5.00e-01	20	13
+1	1023921	C	3.26e-53	9.97e-01	9.97e-01	2.64e-03	1.32e-03	9.31e-09	7.28e-07	9.99e-01	20	13
+1	1024083	A	1.43e-16	8.29e-01	8.29e-01	1.71e-01	8.56e-02	3.86e-06	3.86e-06	9.14e-01	10	8
+1	1024085	C	2.30e-09	1.00e+00	1.00e-04	1.00e+00	4.59e-10	5.00e-01	5.00e-01	4.59e-10	12	8
+1	1024093	C	1.79e-18	1.00e+00	1.26e-10	3.98e-06	5.00e-01	1.99e-06	5.00e-01	4.72e-14	13	8
+1	1024131	C	8.62e-06	9.25e-01	7.54e-02	9.25e-01	8.84e-08	5.38e-01	4.62e-01	8.84e-08	15	4
 ```
 
 ### .vcf file
@@ -138,29 +136,30 @@ an example
 
 ```
 ##fileformat=VCFv4.4
-##fileDate=20230717
-##source=bsgenova
-##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples">
+##fileDate=20240901-03:26:24
+##source=.\bsgenova.py -i .\data\example.ATCGmap.gz -o output/example --sample-name s1
+##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples with Data">
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">
 ##INFO=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">
 ##INFO=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">
-##FILTER=<ID=q30,Description="Quality < 30">
+##INFO=<ID=AF,Number=A,Type=Float,Description="Allele Frequency">
+##FILTER=<ID=q30,Description="Quality<30">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
-##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the alternative variant. So, we express the GQ as the Phred score (-10log10 (p-value)) of posterior probability of homozygote/heterozygote, namely, Prob(heterozygote) for homozygous sites and Prob(homozygote) for heterozygous sites. This is somewhat different with SNV calling from WGS data.">
+##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality. the Phred score -10*log10 (1 -  max posterior probability). If you do not want ambiguous results, filter sites with low GQ values.">
+##FORMAT=<ID=GQH,Number=1,Type=Integer,Description="Genotype Quality of homozygote/heterozygote.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the genotype. So, we express the GQH as the Phred score -10*log10 (1 - posterior probability of homozygote/heterozygote), to indicate the quality of homozygote/heterozygote. This is somewhat different with SNV calling from WGS data.">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">
-##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Wastson Strand">
+##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">
 ##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">
-#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	example
-1	1023917	.	G	C	263	PASS	NS=1,DP=33,DPW=20,DPC=13,AF=0.50	GT:GQ:DP:DPW:DPC	0/1:130:33:20:13
-1	1023921	.	C	G	512	PASS	NS=1,DP=33,DPW=20,DPC=13,AF=1.00	GT:GQ:DP:DPW:DPC	1:26:33:20:13
-1	1024083	.	A	G	158	PASS	NS=1,DP=18,DPW=10,DPC=8,AF=0.91	GT:GQ:DP:DPW:DPC	1:8:18:10:8
-1	1024085	.	C	T	86	PASS	NS=1,DP=20,DPW=12,DPC=8,AF=0.50	GT:GQ:DP:DPW:DPC	0/1:40:20:12:8
-1	1024093	.	C	A	177	PASS	NS=1,DP=21,DPW=13,DPC=8,AF=0.50	GT:GQ:DP:DPW:DPC	0/1:99:21:13:8
-1	1024131	.	C	T	51	PASS	NS=1,DP=19,DPW=15,DPC=4,AF=0.54	GT:GQ:DP:DPW:DPC	0/1:11:19:15:4
-1	1024399	.	G	A	316	PASS	NS=1,DP=23,DPW=18,DPC=5,AF=1.00	GT:GQ:DP:DPW:DPC	1:31:23:18:5
-1	1024462	.	A	G	355	PASS	NS=1,DP=27,DPW=20,DPC=7,AF=1.00	GT:GQ:DP:DPW:DPC	1:37:27:20:7
-1	1024652	.	G	A	21	PASS	NS=1,DP=26,DPW=21,DPC=5,AF=0.50	GT:GQ:DP:DPW:DPC	0/1:21:26:21:5
-1	1024664	.	C	T	92	PASS	NS=1,DP=23,DPW=18,DPC=5,AF=0.74	GT:GQ:DP:DPW:DPC	0/1:3:23:18:5
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	s1
+1	1023917	.	G	C	263	PASS	NS=1;DP=33;DPW=20;DPC=13;AF=0.500	GT:GQ:GQH:DP:DPW:DPC	0/1:79:263:33:20:13
+1	1023921	.	C	G	525	PASS	NS=1;DP=33;DPW=20;DPC=13;AF=0.999	GT:GQ:GQH:DP:DPW:DPC	1/1:26:525:33:20:13
+1	1024083	.	A	G	158	PASS	NS=1;DP=18;DPW=10;DPC=8;AF=0.914	GT:GQ:GQH:DP:DPW:DPC	1/1:8:158:18:10:8
+1	1024085	.	C	T	86	PASS	NS=1;DP=20;DPW=12;DPC=8;AF=0.500	GT:GQ:GQH:DP:DPW:DPC	0/1:40:86:20:12:8
+1	1024093	.	C	A	177	PASS	NS=1;DP=21;DPW=13;DPC=8;AF=0.500	GT:GQ:GQH:DP:DPW:DPC	0/1:54:177:21:13:8
+1	1024131	.	C	T	51	PASS	NS=1;DP=19;DPW=15;DPC=4;AF=0.538	GT:GQ:GQH:DP:DPW:DPC	0/1:11:51:19:15:4
+1	1024399	.	G	A	316	PASS	NS=1;DP=23;DPW=18;DPC=5;AF=1.000	GT:GQ:GQH:DP:DPW:DPC	1/1:31:316:23:18:5
+1	1024462	.	A	G	355	PASS	NS=1;DP=27;DPW=20;DPC=7;AF=1.000	GT:GQ:GQH:DP:DPW:DPC	1/1:37:355:27:20:7
+1	1024652	.	G	A	21	PASS	NS=1;DP=26;DPW=21;DPC=5;AF=0.496	GT:GQ:GQH:DP:DPW:DPC	0/1:21:21:26:21:5
 ```
 
 # bsextractor

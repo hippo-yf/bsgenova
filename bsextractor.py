@@ -285,8 +285,6 @@ def methylExtractor(params: Parameters) -> None:
 
             if outfile_atcg is not None:
                 outfile_atcg.write(f'{intrv.chr}\t{base}\t{intrv.start+i+params.coordinate_base}\t{CG_context}\t{dicontext}\t{covs.watson[0,i]}\t{covs.watson[3,i]}\t{covs.watson[1,i]}\t{covs.watson[2,i]}\t0\t{covs.crick[0,i]}\t{covs.crick[3,i]}\t{covs.crick[1,i]}\t{covs.crick[2,i]}\t0\t{meth_ratio:.2f}\n')
-
-
     
     # close file handles
 
