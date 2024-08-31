@@ -124,7 +124,7 @@ an example
 1	1023921	C	3.26e-53	9.97e-01	9.97e-01	2.64e-03	1.32e-03	9.31e-09	7.28e-07	9.99e-01	20	13
 1	1024083	A	1.43e-16	8.29e-01	8.29e-01	1.71e-01	8.56e-02	3.86e-06	3.86e-06	9.14e-01	10	8
 1	1024085	C	2.30e-09	1.00e+00	1.00e-04	1.00e+00	4.59e-10	5.00e-01	5.00e-01	4.59e-10	12	8
-1	1024093	C	1.79e-18	1.00e+00	1.26e-10	3.98e-06	5.00e-01	1.99e-06	5.00e-01	4.72e-14	13	8
+1	1024093	C	1.79e-18	1.00e+00	1.26e-10	1.00e+00	5.00e-01	1.99e-06	5.00e-01	4.72e-14	13	8
 1	1024131	C	8.62e-06	9.25e-01	7.54e-02	9.25e-01	8.84e-08	5.38e-01	4.62e-01	8.84e-08	15	4
 ```
 
@@ -136,8 +136,8 @@ an example
 
 ```
 ##fileformat=VCFv4.4
-##fileDate=20240901-03:26:24
-##source=.\bsgenova.py -i .\data\example.ATCGmap.gz -o output/example --sample-name s1
+##fileDate=20240901-07:30:08
+##source=bsgenova: .\bsgenova.py -i .\data\example.ATCGmap.gz -o output/example --sample-name s1
 ##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples with Data">
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">
 ##INFO=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">
@@ -157,9 +157,6 @@ an example
 1	1024085	.	C	T	86	PASS	NS=1;DP=20;DPW=12;DPC=8;AF=0.500	GT:GQ:GQH:DP:DPW:DPC	0/1:40:86:20:12:8
 1	1024093	.	C	A	177	PASS	NS=1;DP=21;DPW=13;DPC=8;AF=0.500	GT:GQ:GQH:DP:DPW:DPC	0/1:54:177:21:13:8
 1	1024131	.	C	T	51	PASS	NS=1;DP=19;DPW=15;DPC=4;AF=0.538	GT:GQ:GQH:DP:DPW:DPC	0/1:11:51:19:15:4
-1	1024399	.	G	A	316	PASS	NS=1;DP=23;DPW=18;DPC=5;AF=1.000	GT:GQ:GQH:DP:DPW:DPC	1/1:31:316:23:18:5
-1	1024462	.	A	G	355	PASS	NS=1;DP=27;DPW=20;DPC=7;AF=1.000	GT:GQ:GQH:DP:DPW:DPC	1/1:37:355:27:20:7
-1	1024652	.	G	A	21	PASS	NS=1;DP=26;DPW=21;DPC=5;AF=0.496	GT:GQ:GQH:DP:DPW:DPC	0/1:21:21:26:21:5
 ```
 
 # bsextractor
