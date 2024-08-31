@@ -52,7 +52,7 @@ You can use `pip` or `conda` or else to install `numpy` and `pysam`.
 |  ----  | ----  | ----  | ----  |
 | `-i`, `--atcg-file` | `string` | an input `.atcg[.gz]` file||
 | `-o`, `--output-prefix` | `string` | prefix of output files, for input `path/sample.atcg.gz`, the output is `path/sample.snv.gz` and `path/sample.vcf.gz`, equivalant to set `-o path/sample` | prefix of output files; bsgenova will not create directoy automatically |
-|`--sample-name`|`string`|the sample name used in vcf file. by default, use the basename of output specified by --output-prefix|
+|`--sample-name`|`string`|the sample name used in vcf file. | use the basename of output specified by --output-prefix or derived from input ATCGmap file name|
 |`-m`, `--mutation-rate`| `float` | mutation rate that a haploid base is different with reference base |0.001 |
 |`-e`, `--error-rate` | `float` |error rate a base is misdetected due to sequencing or mapping | 0.03|
 |`-c`, `--methy-cg` |`float` | Cytosine methylation rate of CpG-context | 0.6|
