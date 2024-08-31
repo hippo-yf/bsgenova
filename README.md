@@ -16,7 +16,7 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 `python ./bsgenova.py -i data/example.atcg.gz -o output/example`
 
 - call SNPs from bam file  
-`python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap - | python ./bsgenova.py`
+`python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap - | python ./bsgenova.py -o output/sample`
 
 - extrct ATCGmap, CGmap, and bed files from bam file  
 `python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap sample.ATCGmap.gz --output-cgmap sample.CGmap.gz --output-bed sample.bed.gz`
