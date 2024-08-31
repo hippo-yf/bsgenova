@@ -181,7 +181,7 @@ class SNVparams:
         self.VCF_HEADER = [
             '##fileformat=VCFv4.4\n',
             f'##fileDate=%s\n' % time.strftime("%Y%m%d-%H:%M:%S", time.localtime()),
-            f'##source={" ".join(sys.argv)}\n',
+            f'##source=bsgenova: {" ".join(sys.argv)}\n',
             '##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples with Data">\n',
             '##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">\n',
             '##INFO=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">\n',
@@ -715,9 +715,6 @@ if __name__ == '__main__':
     parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
     parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type=int, default=30)
     parser.add_argument('--keep-order', dest='keep_order', help='keep the results same order with input, true/false, or yes/no', type=as_bool, default=True)
-
-    print(sys.argv)
-    print(' '.join(sys.argv))
 
     options = parser.parse_args()
 
