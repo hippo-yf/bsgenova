@@ -20,6 +20,8 @@ from argparse import Namespace
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s')
 
+__version__ = '1.0.0'
+
 def phredScore(x):
     # max score of 999
     # MAX_PHRED_SCORE = 2**10
@@ -162,8 +164,8 @@ class SNVparams:
         # if self.outprefix is None or self.outprefix == "":
         if self.outprefix == '-':
             if self.infile == '-':
-                print('os.error')
-                sys.exit("Must specify \"--output-prefix\" when reading from stdin!")
+                # print('os.error')
+                sys.exit("Must specify \"-o/--output-prefix\" when reading from stdin!")
             else:
                 # dir = os.path.dirname(self.infile)
                 filename = os.path.basename(self.infile)
@@ -181,7 +183,7 @@ class SNVparams:
         self.VCF_HEADER = [
             '##fileformat=VCFv4.4\n',
             f'##fileDate=%s\n' % time.strftime("%Y%m%d-%H:%M:%S", time.localtime()),
-            f'##source=bsgenova: {" ".join(sys.argv)}\n',
+            f'##source=bsgenova (version {__version__}): {" ".join(sys.argv)}\n',
             '##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples with Data">\n',
             '##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">\n',
             '##INFO=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">\n',
@@ -715,6 +717,7 @@ if __name__ == '__main__':
     parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
     parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type=int, default=30)
     parser.add_argument('--keep-order', dest='keep_order', help='keep the results same order with input, true/false, or yes/no', type=as_bool, default=True)
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
     options = parser.parse_args()
 

@@ -137,7 +137,7 @@ an example
 ```
 ##fileformat=VCFv4.4
 ##fileDate=20240901-07:30:08
-##source=bsgenova: .\bsgenova.py -i .\data\example.ATCGmap.gz -o output/example --sample-name s1
+##source=bsgenova (version 1.0.0): ./bsgenova.py -i ./data/example.ATCGmap.gz -o output/example --sample-name s1
 ##INFO=<ID=NS,Number=1,Type=Integer,Description="Number of Samples with Data">
 ##INFO=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">
 ##INFO=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">
