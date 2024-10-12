@@ -6,19 +6,18 @@ import os
 import io
 import gzip
 import re
-import numpy as np
 from collections import namedtuple
-# from numba import jit
 from multiprocessing import Pool
-
-# from scipy.stats import multinomial
-# dmultinom = multinomial.pmf
-
-from argparse import ArgumentParser
-from argparse import Namespace
+from argparse import ArgumentParser, Namespace
 
 import logging
 logging.basicConfig(format='%(asctime)s - %(message)s')
+
+import numpy as np
+
+# from scipy.stats import multinomial
+# dmultinom = multinomial.pmf
+# from numba import jit
 
 __version__ = '1.0.0'
 
