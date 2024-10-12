@@ -27,7 +27,7 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 ## Installation and dependencies
 
 - python >= 3.8
-- numpy >= 1.13
+- numpy >= 1.18
 - pysam >= 0.18 (only for ***bsextractor***)
 
 You can use `pip` or `conda` or else to install `numpy` and `pysam`, or use `uv` to `sync` the project.
