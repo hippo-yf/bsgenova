@@ -8,7 +8,7 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 - bsgenova is resistant against contaminative/low-quality data
 - bsgenova is fast, consuming ~3 hours with 4 CPU cores for 30X human WGBS sample
 - bsgenova is memory- and disk-efficient
-- use bsextractor to extract methylation(C/G sites) and whole-genome (ATCG sites) read coverage from bam file
+- use bsextractor to extract methylation(C/G sites) and whole-genome (A/T/C/G sites) read coverage from bam file
 
 ## Examples
 
