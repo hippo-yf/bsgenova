@@ -13,7 +13,7 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 ## Examples
 
 - call SNPs from ATCGmap file (with example data)  
-`python ./bsgenova.py -i data/example.atcg.gz -o output/example`
+`python ./bsgenova.py -i data/example.ATCGmap.gz -o output/example`
 
 - call SNPs from bam file  
 `python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap - | python ./bsgenova.py -o output/sample`
@@ -28,9 +28,10 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 
 - python >= 3.8
 - numpy >= 1.13
-- pysam >= 1.18 (only for ***bsextractor***)
+- pysam >= 0.18 (only for ***bsextractor***)
 
-You can use `pip` or `conda` or else to install `numpy` and `pysam`.
+You can use `pip` or `conda` or else to install `numpy` and `pysam`, or use `uv` to `sync` the project.
+
 
 ## Performance
 

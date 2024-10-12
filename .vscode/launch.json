@@ -12,11 +12,12 @@
             "console": "integratedTerminal",
             "justMyCode": true,
             "args": [
-            "-i", "./data/atcg.example",
-            "-P", "1",
+            "-i", "./data/example.atcg.gz",
+            "-o", "a/a",
+            "-P", "2",
             "-p", "0.05",
-            "--keep-order", "True",
-            "--pool-upper-num", "8"
+            "--keep-order", "false",
+            "--pool-upper-num", "30"
         ]
         }
     ]

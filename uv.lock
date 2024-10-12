@@ -1,0 +1,47 @@
+version = 1
+requires-python = ">=3.8"
+
+[[package]]
+name = "bsgenova"
+version = "1.0.0"
+source = { virtual = "." }
+dependencies = [
+    { name = "numpy" },
+    { name = "pysam" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "numpy", specifier = "==1.18" },
+    { name = "pysam", specifier = "==0.18" },
+]
+
+[[package]]
+name = "numpy"
+version = "1.18.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/31/0a/5df350c29a06835d534a6c4f5681075304da38d85f1c69e5226a635a67ce/numpy-1.18.0.zip", hash = "sha256:a9d72d9abaf65628f0f31bbb573b7d9304e43b1e6bbae43149c17737a42764c4", size = 5422309 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/85/7c/a870abc411a46b90b3c38b1e609e3bdae97fc87bc4c7e49dc3ac98df36d1/numpy-1.18.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:9d6de2ad782aae68f7ed0e0e616477fbf693d6d7cc5f0f1505833ff12f84a673", size = 15165085 },
+    { url = "https://files.pythonhosted.org/packages/6e/e7/eb05d02d81e5cdc9c2a3c4172ceb8dbab74f9f82ec85f4395aea5bb2a7a0/numpy-1.18.0-cp38-cp38-manylinux1_i686.whl", hash = "sha256:1c35fb1131362e6090d30286cfda52ddd42e69d3e2bf1fea190a0fad83ea3a18", size = 17794515 },
+    { url = "https://files.pythonhosted.org/packages/f5/4d/cbea29c189e2a9c5d3e2d76307be15f7f864a073cdb6c1abbc8e4311afbc/numpy-1.18.0-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:56710a756c5009af9f35b91a22790701420406d9ac24cf6b652b0e22cfbbb7ff", size = 20606361 },
+    { url = "https://files.pythonhosted.org/packages/0f/c7/4b7ecbf676443c70ac2fa2120a4cefe51917e284d7c926a187f3e3ec207d/numpy-1.18.0-cp38-cp38-win32.whl", hash = "sha256:03bbde29ac8fba860bb2c53a1525b3604a9b60417855ac3119d89868ec6041c3", size = 10817069 },
+    { url = "https://files.pythonhosted.org/packages/bc/8d/2b9e00c884bba5aa7a400941f356763cf60c578cc31400dd9bcd495084a2/numpy-1.18.0-cp38-cp38-win_amd64.whl", hash = "sha256:712f0c32555132f4b641b918bdb1fd3c692909ae916a233ce7f50eac2de87e37", size = 12809005 },
+]
+
+[[package]]
+name = "pysam"
+version = "0.18.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/15/79/00249a37089a6aecb70a4080f8af8d88e7005e2019c71e505c3ad3a0a018/pysam-0.18.0.tar.gz", hash = "sha256:1d6d49a0b3c626fae410a93d4c80583a8b5ddaacc9b46a080b250dbcebd30a59", size = 3780010 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/63/9a/d75f5da85e0bd0f9f56a6a70dbd01a27c06dc6e22a5821b0ed38abf4b78a/pysam-0.18.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:ef5d8ad01cac8974cd09832c226cbb63a3f7c5bd63727d8e59447021ee16a186", size = 3154304 },
+    { url = "https://files.pythonhosted.org/packages/77/72/e3ca6db84546a87fe2932c0078a6f85df62b5358e0a34ac7225bbc23fc52/pysam-0.18.0-cp310-cp310-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:ca0c9289dfdc5e1a81bccdb8305192cd14cf9730bd21320ceca949fde071a572", size = 15125381 },
+    { url = "https://files.pythonhosted.org/packages/d8/01/c2917cad72433c4fad038b80cfd52eb79e9364636cd581efcc5fa1a6e0e0/pysam-0.18.0-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:e13e496da3a432db24f424439834b0ab5f40700a3db6e610d06f8bd639d9fd2d", size = 15633522 },
+    { url = "https://files.pythonhosted.org/packages/35/9a/dd9abdaacae2c23982612a218810f866e3f82ef3925f305d640bc9df7f28/pysam-0.18.0-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:7a8a25fceaaa96e5b4c8b0a7fd6bb0b20b6c262dc4cc867c6d1467ac990f1d77", size = 3102197 },
+    { url = "https://files.pythonhosted.org/packages/4f/5a/cfb4cb6102335003a238e6d98e31ca23b42c9bef79cdf4ee55a1ab8b4cac/pysam-0.18.0-cp38-cp38-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:493988420db16e6ee03393518e4d272df05f0a35780248c08c61da7411e520e7", size = 15605256 },
+    { url = "https://files.pythonhosted.org/packages/41/0f/4ffdea619a8898c936f6f1b909759486167976d761fc265f931119f0da1e/pysam-0.18.0-cp38-cp38-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:7f6a4ec58ad7995b791a71bf35f673ea794e734c587ea7329fca5cce9c53a7af", size = 16186179 },
+    { url = "https://files.pythonhosted.org/packages/32/fb/4b78459c42ed9e7f5cee1304b6ecedcfcb74843619855ca4a1f15704a4bd/pysam-0.18.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:0cfa16f76ed3c3119c7b3c8dfdcba9e010fbcdcf87eaa165351bb369da5a6bf1", size = 3154509 },
+    { url = "https://files.pythonhosted.org/packages/52/19/786e6b77ea6d3545ee145179da8d3d7a07ee9480a930ad6c647bf1e764f5/pysam-0.18.0-cp39-cp39-manylinux_2_12_i686.manylinux2010_i686.whl", hash = "sha256:2717509556fecddf7c73966fa62066c6a59a7d39b755d8972afa8d143a1d5aa5", size = 15113026 },
+    { url = "https://files.pythonhosted.org/packages/b3/8b/13f22de05979c3aa2d2fb1c6627cf1846a59677ee457d30fe6e528d5938e/pysam-0.18.0-cp39-cp39-manylinux_2_12_x86_64.manylinux2010_x86_64.whl", hash = "sha256:f5a23a5dcf32f01c66d44e89113fa8f7522997ea43fbc0f98e5250a907911a5f", size = 15613357 },
+]

@@ -1,0 +1,10 @@
+[project]
+name = "bsgenova"
+version = "1.0.0"
+description = "An accurate robust and fast genotype caller for bisulfite-converted sequencing data"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy==1.18",
+    "pysam==0.18",
+]
