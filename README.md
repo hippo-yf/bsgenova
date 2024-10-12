@@ -8,7 +8,7 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 - bsgenova is resistant against contaminative/low-quality data
 - bsgenova is fast, consuming ~3 hours with 4 CPU cores for deep WGBS sample
 - bsgenova is memory- and disk-efficient
-- use bsextractor to extract methylalation/whole-genome coverage from bam file
+- use bsextractor to extract methylation/whole-genome coverage from bam file
 
 ## Examples
 
@@ -18,10 +18,10 @@ An **accurate**, **robust**, and **fast** genotype caller for **bisulfite-conver
 - call SNPs from bam file  
 `python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap - | python ./bsgenova.py -o output/sample`
 
-- extrct ATCGmap, CGmap, and bed files from bam file  
+- extract ATCGmap, CGmap, and bed files from bam file  
 `python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap sample.ATCGmap.gz --output-cgmap sample.CGmap.gz --output-bed sample.bed.gz`
 
-- extrct ATCGmap file for a subset of genome  
+- extract ATCGmap file for a subset of genome  
 `python ./bsextractor.py -b /path/to/sample.bam -g /path/to/genome.fa --output-atcgmap sample.ATCGmap.gz --chr chr1,chr22 --start 1000000 --end 1100000`
 
 ## Installation and dependencies
@@ -52,19 +52,19 @@ You can use `pip` or `conda` or else to install `numpy` and `pysam`, or use `uv`
 |**parameter** | **type** | **description**| **defaults** |
 |  ----  | ----  | ----  | ----  |
 | `-i`, `--atcg-file` | `string` | an input `.ATCGmap[.gz]` file| read from `stdin` |
-| `-o`, `--output-prefix` | `string` | prefix of output files, for input `path/sample.ATCGmap.gz`, the deault output is `path/sample.snv.gz` and `path/sample.vcf.gz`, equivalant to set `-o path/sample` | prefix of output files; bsgenova will not create directoy automatically |
+| `-o`, `--output-prefix` | `string` | prefix of output files, for input `path/sample.ATCGmap.gz`, the deault output is `path/sample.snv.gz` and `path/sample.vcf.gz`, equivalent to set `-o path/sample` | prefix of output files; bsgenova will not create directory automatically |
 |`--sample-name`|`string`|the sample name used in vcf file. | use the basename of output specified by `--output-prefix` or derived from input ATCGmap file name|
 |`-m`, `--mutation-rate`| `float` | mutation rate that a haploid base is different with reference base |0.001 |
-|`-e`, `--error-rate` | `float` |error rate a base is misdetected due to sequencing or mapping | 0.03|
+|`-e`, `--error-rate` | `float` |error rate a base is mis-detected due to sequencing or mapping | 0.03|
 |`-c`, `--methy-cg` |`float` | Cytosine methylation rate of CpG-context | 0.6|
 |`-n`, `--methy-ch` |`float` |Cytosine methylation rate of non-CpG-context | 0.01|
 |`-d`, `--min-depth` |`float` | sites with coverage depth less than minimal depth will be skipped | 10|
 |`-p`, `--pvalue` |`float` | *p*-value threshold (the *p*-value is actually posterior probability) |0.01|
-|`--shrink-depth` |`integer` | sites with coverage larger than this value will be shrinked by a square-root transform | 60|
+|`--shrink-depth` |`integer` | sites with coverage larger than this value will be shrunk by a square-root transform | 60|
 |`--batch-size` |`integer` | a batch of genomic sites will be processed at the same time |10000|
 |`-P`, `--num-process` |`integer` | number of processes in parallel |4|
-|`--pool-lower-num` |`integer` | lower number of bacthes in memory pool per process |10|
-|`--pool-upper-num` |`integer` | upper number of bacthes in memory pool per process |30|
+|`--pool-lower-num` |`integer` | lower number of batches in memory pool per process |10|
+|`--pool-upper-num` |`integer` | upper number of batches in memory pool per process |30|
 |`--keep-order` |`logical` | keep the results same order with input, if the order of sites makes no difference, set `False` to enable faster non-blocking asynchronous IO, True/False or Yes/No, case insensitive | True|
 |`-h`, `--help` | | show this help message and exit ||
 
@@ -114,7 +114,7 @@ The .snv file is equivalent to .vcf file.
 |3| reference base|
 |4| posterior probability of not a SNV (different from reference)|
 |5| max posterior probability|
-|6-7| posterior probability of a homozygote/heterzygote  |
+|6-7| posterior probability of a homozygote/heterozygote  |
 |8-11| posterior allele frequencies of A,T,C, and G, respectively |
 |12-13| coverage depths of Watson and Crick strands, respectively|
 
@@ -147,7 +147,7 @@ an example
 ##FILTER=<ID=q30,Description="Quality<30">
 ##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">
 ##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality. the Phred score -10*log10 (1 -  max posterior probability). If you do not want ambiguous results, filter sites with low GQ values.">
-##FORMAT=<ID=GQH,Number=1,Type=Integer,Description="Genotype Quality of homozygote/heterozygote.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the genotype. So, we express the GQH as the Phred score -10*log10 (1 - posterior probability of homozygote/heterozygote), to indicate the quality of homozygote/heterozygote. This is somewhat different with SNV calling from WGS data.">
+##FORMAT=<ID=GQH,Number=1,Type=Integer,Description="Genotype Quality of homozygote/heterozygote.In some cases of single-stranded converge, we are sure there is a SNV, but we can not determine the genotype. So, we express the GQH as the Phred score -10*log10 (1 - posterior probability of homozygote/heterozygote), to indicate the quality of homozygote/heterozygote. This is somewhat different with SNV calling from WGS data.">
 ##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">
 ##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">
 ##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">
@@ -171,7 +171,7 @@ an example
 |`--output-atcgmap`|`string`|output of ATCGmap file, `-`for `stdout`||
 |`--output-cgmap`|`string`|output of CGmap file, `-`for `stdout`|||
 |`--output-bed`|`string`|output of bedgraph file, `-`for `stdout`||
-|`--chr`|`string`|chromosomes/contigs, use `,` to seperate, ie `chr1,chr2`|all|
+|`--chr`|`string`|chromosomes/contigs, use `,` to separate, ie `chr1,chr2`|all|
 |`--start`|`integer`|start coordinate of chromosomes/contigs|0|
 |`--end`|`integer`|end coordinate of chromosomes/contigs|math.inf|
 |`--batch-size`|`integer`|batch size of genomic intervals|2_000_000|

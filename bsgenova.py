@@ -191,7 +191,7 @@ class SNVparams:
             '##FILTER=<ID=q30,Description="Quality<30">\n',
             '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n',
             '##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype Quality. the Phred score -10*log10 (1 -  max posterior probability). If you do not want ambiguous results, filter sites with low GQ values.">\n',
-            '##FORMAT=<ID=GQH,Number=1,Type=Integer,Description="Genotype Quality of homozygote/heterozygote.In some cases of single-stranded coverge, we are sure there is a SNV, but we can not determine the genotype. So, we express the GQH as the Phred score -10*log10 (1 - posterior probability of homozygote/heterozygote), to indicate the quality of homozygote/heterozygote. This is somewhat different with SNV calling from WGS data.">\n',
+            '##FORMAT=<ID=GQH,Number=1,Type=Integer,Description="Genotype Quality of homozygote/heterozygote.In some cases of single-stranded converge, we are sure there is a SNV, but we can not determine the genotype. So, we express the GQH as the Phred score -10*log10 (1 - posterior probability of homozygote/heterozygote), to indicate the quality of homozygote/heterozygote. This is somewhat different with SNV calling from WGS data.">\n',
             '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Total Read Depth">\n',
             '##FORMAT=<ID=DPW,Number=1,Type=Integer,Description="Read Depth of Watson Strand">\n',
             '##FORMAT=<ID=DPC,Number=1,Type=Integer,Description="Read Depth of Crick Strand">\n',
