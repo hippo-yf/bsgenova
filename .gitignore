@@ -1,4 +1,5 @@
-/test.ipynb
-large-data/
 .vscode/
-test/
+.venv/
+__pycache__/
+output/
+large-data/
