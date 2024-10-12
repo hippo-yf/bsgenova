@@ -665,7 +665,7 @@ def BS_SNV_CAller_keep_order(options: Namespace):
         wrt_ctl.close()
 
 
-# diasble parallelism
+# disable parallelism
 def BS_SNV_CAller_single_process(options: Namespace):
 
     # model params
@@ -698,23 +698,23 @@ if __name__ == '__main__':
     # parse command line
     
     usage = 'Usage: bsgenova.py -i sample.ATCGmap.gz [options]'
-    desc = 'genotype/SNP calling from bisulite-sequencing data'
+    desc = 'genotype/SNP calling from bisulfite-sequencing data'
 
     parser = ArgumentParser(description=desc)
     parser.add_argument('-i', '--atcg-file', dest='infile', help='an input .ATCGmap[.gz] file, default: read from stdin', type=str, required=False, default="-")
     parser.add_argument('-o', '--output-prefix', dest='outprefix', help='prefix of output files, a prefix.snv.gz and a prefix.vcf.gz will be returned, by default, same with input filename except suffix, for example, for input of path/sample.atcg.gz, the output is path/sample.snv.gz and path/sample.vcf.gz which is equivalent to setting -o path/sample', type=str, required=False, default='-')
     parser.add_argument('--sample-name', dest='sampleID', help='the sample name used in vcf file. by default, use the basename of output specified by --output-prefix', type=str, required=False, default='-')
-    parser.add_argument('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate of a hyploid base', type=float, default=0.001)
+    parser.add_argument('-m', '--mutation-rate', dest='mutation_rate', help='mutation rate of a haploid base', type=float, default=0.001)
     parser.add_argument('-e', '--error-rate', dest='error_rate', help='error rate that a base is mis-detected due to sequencing or mapping', type=float, default=0.03)
     parser.add_argument('-c', '--methy-cg', dest='methy_cg', help=' methylation rate of CpG-context cytosines', type=float, default=0.6)
     parser.add_argument('-n', '--methy-ch', dest='methy_ncg', help='methylation rate of non-CpG-context cytosines', type=float, default=0.01)
     parser.add_argument('-d', '--min-depth', dest='min_depth', help='sites with coverage depth less than this value will be skipped', type=int, default=10)
     parser.add_argument('-p', '--pvalue', dest='pvalue', help='p-value threshold', type=float, default=0.01)
-    parser.add_argument('--shrink-depth', dest='shrink_depth', help='sites with coverage greater than this value will be shrinked by a square-root transform', type=int, default=60)
+    parser.add_argument('--shrink-depth', dest='shrink_depth', help='sites with coverage greater than this value will be shrunk by a square-root transform', type=int, default=60)
     parser.add_argument('--batch-size', dest='batch_size', help='a batch of sites will be processed at the same time', type=int, default=10000)
     parser.add_argument('-P', '--num-process', dest='num_process', help='number of processes in parallel', type=int, default=4)
-    parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of bacthes in memory pool per process', type=int, default=10)
-    parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of bacthes in memory pool per process', type=int, default=30)
+    parser.add_argument('--pool-lower-num', dest='pool_lower_num', help='lower number of batches in memory pool per process', type=int, default=10)
+    parser.add_argument('--pool-upper-num', dest='pool_upper_num', help='upper number of batches in memory pool per process', type=int, default=30)
     parser.add_argument('--keep-order', dest='keep_order', help='keep the results same order with input, true/false, or yes/no', type=as_bool, default=True)
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + __version__)
 
